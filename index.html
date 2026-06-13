@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aurushen · Agenda Docente</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #FCFBF4;
+      --deep-blue: #023047;
+      --gold: #B88A2B;
+      --gold-light: #D4A93A;
+      --dark: #1A1A2E;
+      --muted: #6B7280;
+      --border: #E2DCC8;
+    }
+    * { box-sizing: border-box; }
+    body { background: var(--cream); color: var(--dark); font-family: 'Inter', sans-serif; min-height: 100vh; margin: 0; }
+    .font-display { font-family: 'Fraunces', serif; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .field { width:100%; padding:.65rem .9rem; border:1.5px solid var(--border); border-radius:10px; background:#fff; color:var(--dark); font-size:.875rem; outline:none; transition:border .2s; font-family:'Inter',sans-serif; }
+    .field:focus { border-color:var(--gold); }
+    textarea.field { resize:vertical; }
+    .btn-gold { background:var(--gold); color:#fff; font-weight:600; border:none; border-radius:10px; padding:.75rem 1.5rem; cursor:pointer; transition:background .2s,transform .1s; width:100%; font-size:.9rem; letter-spacing:.02em; font-family:'Inter',sans-serif; }
+    .btn-gold:hover { background:var(--gold-light); }
+    .btn-gold:active { transform:scale(.98); }
+    .btn-blue { background:var(--deep-blue); color:#fff; font-weight:600; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; transition:opacity .2s; font-size:.8rem; white-space:nowrap; font-family:'Inter',sans-serif; }
+    .btn-blue:hover { opacity:.85; }
+    .btn-ghost { background:none; border:1.5px solid var(--border); color:var(--muted); font-weight:500; border-radius:8px; padding:.4rem .8rem; cursor:pointer; font-size:.78rem; font-family:'Inter',sans-serif; transition:all .15s; }
+    .btn-ghost:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-danger { background:none; border:none; color:#dc2626; cursor:pointer; font-size:.8rem; font-weight:500; padding:.3rem .5rem; font-family:'Inter',sans-serif; }
+    .btn-danger:hover { text-decoration:underline; }
+    .btn-edit { background:none; border:none; color:var(--gold); cursor:pointer; font-size:.8rem; font-weight:500; padding:.3rem .5rem; font-family:'Inter',sans-serif; }
+    .btn-edit:hover { text-decoration:underline; }
+    #navbar { background:var(--deep-blue); color:#fff; padding:.85rem 1.25rem; position:sticky; top:0; z-index:30; }
+    #filter-bar { background:var(--deep-blue); padding:.75rem 1.25rem 1rem; }
+    #filter-bar select { background:rgba(255,255,255,.1); color:#fff; border:1.5px solid rgba(255,255,255,.2); border-radius:8px; padding:.5rem .75rem; font-size:.82rem; width:100%; outline:none; font-family:'Inter',sans-serif; }
+    #filter-bar select option { background:var(--deep-blue); }
+    .cal-wrap { background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 8px rgba(0,0,0,.07); }
+    .cal-nav { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; border-bottom:1px solid var(--border); }
+    .cal-nav-btn { width:30px; height:30px; border:none; background:none; cursor:pointer; border-radius:6px; font-size:1.1rem; color:var(--deep-blue); display:flex; align-items:center; justify-content:center; }
+    .cal-nav-btn:hover { background:var(--cream); }
+    #cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+    .cal-header-cell { text-align:center; font-size:.65rem; font-weight:700; color:var(--muted); padding:.4rem 0; text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border); }
+    .cal-cell { border-right:1px solid #f0ece0; border-bottom:1px solid #f0ece0; min-height:64px; padding:2px 2px 4px; position:relative; cursor:pointer; transition:background .12s; vertical-align:top; }
+    .cal-cell:nth-child(7n) { border-right:none; }
+    .cal-cell:hover { background:#FDFAF0; }
+    .cal-cell.other-month { background:#FAFAF7; }
+    .cal-day-num { font-size:.72rem; font-weight:600; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:1px auto 2px; color:var(--dark); }
+    .cal-cell.other-month .cal-day-num { color:#C8C4B4; }
+    .cal-cell.today .cal-day-num { background:var(--deep-blue); color:#fff; }
+    .cal-event-chip { font-size:.58rem; font-weight:600; line-height:1.2; padding:1px 4px; border-radius:4px; margin:1px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; display:block; }
+    .task-card { background:#fff; border-radius:14px; padding:1rem 1.1rem; border-left:4px solid var(--gold); box-shadow:0 1px 6px rgba(0,0,0,.06); transition:box-shadow .2s; }
+    .task-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.1); }
+    .badge { font-size:.68rem; font-weight:600; padding:.18rem .55rem; border-radius:999px; text-transform:uppercase; letter-spacing:.05em; }
+    .badge-pending { background:#FEF3C7; color:#92400E; }
+    .badge-done { background:#D1FAE5; color:#065F46; }
+    .config-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .config-table th { text-align:left; font-size:.68rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; padding:.4rem .6rem; border-bottom:1.5px solid var(--border); }
+    .config-table td { padding:.55rem .6rem; border-bottom:1px solid #F0EBD8; vertical-align:middle; }
+    .config-table tr:last-child td { border-bottom:none; }
+    .config-table tr:hover td { background:#FDFAF0; }
+    #fab { position:fixed; bottom:1.5rem; right:1.5rem; width:56px; height:56px; border-radius:50%; background:var(--deep-blue); color:var(--gold-light); border:none; font-size:1.7rem; cursor:pointer; box-shadow:0 4px 20px rgba(2,48,71,.35); display:flex; align-items:center; justify-content:center; transition:transform .2s,box-shadow .2s; z-index:40; }
+    #fab:hover { transform:scale(1.08); box-shadow:0 6px 28px rgba(2,48,71,.45); }
+    #fab:active { transform:scale(.95); }
+    #modal-overlay { position:fixed; inset:0; background:rgba(2,48,71,.55); backdrop-filter:blur(5px); z-index:50; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+    #modal-overlay.open { opacity:1; pointer-events:all; }
+    #modal-box { background:var(--cream); border-radius:22px 22px 0 0; padding:1.5rem 1.25rem 2rem; width:100%; max-width:480px; transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); max-height:92vh; overflow-y:auto; }
+    #modal-overlay.open #modal-box { transform:translateY(0); }
+    #edit-modal-overlay { position:fixed; inset:0; background:rgba(2,48,71,.55); backdrop-filter:blur(5px); z-index:50; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+    #edit-modal-overlay.open { opacity:1; pointer-events:all; }
+    #edit-modal-box { background:var(--cream); border-radius:22px 22px 0 0; padding:1.5rem 1.25rem 2rem; width:100%; max-width:480px; transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); max-height:92vh; overflow-y:auto; }
+    #edit-modal-overlay.open #edit-modal-box { transform:translateY(0); }
+    .modal-overlay { position:fixed; inset:0; background:rgba(2,48,71,.55); backdrop-filter:blur(5px); z-index:50; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+    .modal-overlay.active { opacity:1; pointer-events:all; }
+    .modal-box { background:var(--cream); border-radius:22px 22px 0 0; padding:1.5rem 1.25rem 2rem; width:100%; max-width:480px; transform:translateY(100%); transition:transform .3s cubic-bezier(.32,.72,0,1); max-height:92vh; overflow-y:auto; }
+    .modal-overlay.active .modal-box { transform:translateY(0); }
+    .modal-handle { width:40px; height:4px; border-radius:9999px; background:#D4CCB4; margin:0 auto 1.25rem; }
+    #toast { position:fixed; top:1.2rem; left:50%; transform:translateX(-50%); z-index:100; padding:.65rem 1.25rem; border-radius:12px; font-size:.83rem; font-weight:600; color:#fff; background:var(--deep-blue); box-shadow:0 4px 20px rgba(2,48,71,.3); opacity:0; pointer-events:none; transition:opacity .25s; white-space:nowrap; }
+    .onboard-section { background:#fff; border-radius:14px; padding:1.1rem; border:1.5px solid var(--border); }
+    .logo-mark { width:34px; height:34px; background:var(--gold); border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-size:.95rem; color:#fff; font-weight:700; flex-shrink:0; }
+    .chip-0 { background:#DBEAFE; color:#1e40af; }
+    .chip-1 { background:#D1FAE5; color:#065f46; }
+    .chip-2 { background:#FEF3C7; color:#92400e; }
+    .chip-3 { background:#FCE7F3; color:#9d174d; }
+    .chip-4 { background:#EDE9FE; color:#4c1d95; }
+    .chip-5 { background:#FFEDD5; color:#7c2d12; }
+    .chip-6 { background:#F0FDF4; color:#14532d; }
+    #navbar-help { background:var(--deep-blue); color:#fff; padding:.85rem 1.25rem; position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:.75rem; }
+    #navbar-help button { background:rgba(255,255,255,.12); border:none; color:#fff; width:34px; height:34px; border-radius:10px; font-size:1.1rem; cursor:pointer; flex-shrink:0; }
+    .help-card { background:#fff; border-radius:14px; padding:1.1rem 1.15rem; border:1.5px solid var(--border); margin-bottom:.9rem; }
+    .help-card h3 { font-family:'Fraunces',serif; font-size:1.05rem; font-weight:700; color:var(--deep-blue); margin:0 0 .55rem; display:flex; align-items:center; gap:.5rem; }
+    .help-card p { font-size:.92rem; line-height:1.65; color:var(--dark); margin:0 0 .5rem; }
+    .help-card p:last-child { margin-bottom:0; }
+    .help-card em { font-style:italic; color:var(--gold); font-weight:600; }
+    .help-card strong { color:var(--deep-blue); }
+    .help-step { display:flex; gap:.65rem; margin-bottom:.55rem; align-items:flex-start; }
+    .help-step:last-child { margin-bottom:0; }
+    .help-step .num { background:var(--gold); color:#fff; font-weight:700; font-size:.78rem; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:.05rem; }
+    .help-step .txt { font-size:.92rem; line-height:1.6; color:var(--dark); }
+    .auth-header { background:var(--deep-blue); padding:1.5rem 1.25rem 1.25rem; display:flex; align-items:center; gap:.75rem; }
+    .auth-header-sub { font-size:.72rem; font-weight:600; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin:0; }
+    .auth-header-title { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:700; color:#fff; margin:0; line-height:1.2; }
+    /* Historial filtros */
+    .history-filter-bar { display:flex; gap:.5rem; margin-bottom:1rem; }
+    .history-filter-bar select { flex:1; padding:.45rem .6rem; border:1.5px solid var(--border); border-radius:8px; background:#fff; color:var(--dark); font-size:.78rem; font-family:'Inter',sans-serif; outline:none; }
+    .history-filter-bar select:focus { border-color:var(--gold); }
+    @media (min-width:480px) {
+      #modal-box, #edit-modal-box, .modal-box { border-radius:20px; margin:auto; }
+      #modal-overlay, #edit-modal-overlay, .modal-overlay { align-items:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- VIEW: WELCOME -->
+<div id="view-welcome" class="view">
+  <div class="min-h-screen flex flex-col items-center justify-center px-5 py-12">
+    <div class="flex flex-col items-center mb-8">
+      <div class="logo-mark mb-4" style="width:52px;height:52px;font-size:1.45rem;border-radius:14px;">A</div>
+      <h1 class="font-display font-bold" style="color:var(--deep-blue);font-size:2.2rem;line-height:1.1;margin:0;">Aurushen</h1>
+      <p class="text-xs font-semibold tracking-widest uppercase mt-2" style="color:var(--gold);letter-spacing:.14em;">Agenda Docente</p>
+    </div>
+    <div class="w-full max-w-sm flex flex-col gap-4 mb-8">
+      <p class="text-center text-sm leading-relaxed" style="color:var(--muted);">La herramienta que necesitas para gestionar todas tus evaluaciones desde un solo lugar. Simple, visual y siempre contigo.</p>
+    </div>
+    <div class="w-full max-w-sm flex flex-col gap-3">
+      <button class="btn-gold" onclick="showView('view-request')">Solicitar Acceso →</button>
+      <button onclick="showView('view-help')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;font-size:.88rem;text-decoration:underline;padding:.5rem 0;font-family:'Inter',sans-serif;">📖 Ver instrucciones de uso</button>
+    </div>
+    <p class="text-xs mt-8" style="color:var(--muted);">¿Ya tienes cuenta? <button onclick="showView('view-login')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;text-decoration:underline;font-size:.75rem;font-family:'Inter',sans-serif;">Iniciar sesión</button></p>
+    <p class="text-xs mt-4" style="color:#C8C4B4;">Aurushen · Datos seguros y privados</p>
+  </div>
+</div>
+
+<!-- VIEW: REQUEST -->
+<div id="view-request" class="view">
+  <div class="min-h-screen flex flex-col">
+    <div class="auth-header">
+      <div class="logo-mark" style="width:32px;height:32px;font-size:.9rem;">A</div>
+      <div><p class="auth-header-sub">Aurushen</p><p class="auth-header-title">Solicitar Acceso</p></div>
+    </div>
+    <div class="flex-1 px-4 pt-6 pb-10 max-w-sm mx-auto w-full">
+      <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">NOMBRE</label>
+          <input type="text" id="req-nombre" class="field" placeholder="Ej. Laura" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">APELLIDO</label>
+          <input type="text" id="req-apellido" class="field" placeholder="Ej. Martínez" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CORREO ELECTRÓNICO</label>
+          <input type="email" id="req-correo" class="field" placeholder="tu@correo.com" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">TELÉFONO / WHATSAPP</label>
+          <input type="tel" id="req-telefono" class="field" placeholder="Ej. +57 300 000 0000" onkeydown="if(event.key==='Enter') submitRequest()" />
+        </div>
+        <div class="pt-1"><button class="btn-gold" onclick="submitRequest()">Enviar solicitud →</button></div>
+      </div>
+      <button onclick="showView('view-welcome')" class="mt-5 text-sm text-center w-full" style="background:none;border:none;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: CONFIRM -->
+<div id="view-confirm" class="view">
+  <div class="min-h-screen flex flex-col items-center justify-center px-5 py-12 text-center">
+    <div style="font-size:4rem;margin-bottom:1rem;">✅</div>
+    <h2 class="font-display font-bold mb-3" style="color:var(--deep-blue);font-size:1.6rem;">¡Solicitud enviada!</h2>
+    <p class="text-sm leading-relaxed mb-8 max-w-xs" style="color:var(--muted);">Tu solicitud fue recibida. En las próximas horas recibirás un correo con tu usuario y contraseña para ingresar a Aurushen.</p>
+    <button onclick="showView('view-welcome')" style="background:none;border:2px solid var(--deep-blue);color:var(--deep-blue);font-weight:600;border-radius:10px;padding:.75rem 1.5rem;cursor:pointer;font-size:.9rem;font-family:'Inter',sans-serif;width:100%;max-width:280px;">← Volver al inicio</button>
+  </div>
+</div>
+
+<!-- VIEW: LOGIN -->
+<div id="view-login" class="view">
+  <div class="min-h-screen flex flex-col">
+    <div class="auth-header">
+      <div class="logo-mark" style="width:32px;height:32px;font-size:.9rem;">A</div>
+      <div><p class="auth-header-sub">Aurushen</p><p class="auth-header-title">Iniciar Sesión</p></div>
+    </div>
+    <div class="flex-1 px-4 pt-6 pb-10 max-w-sm mx-auto w-full">
+      <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CORREO ELECTRÓNICO</label>
+          <input type="email" id="login-email" class="field" placeholder="tu@correo.com" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CONTRASEÑA</label>
+          <input type="password" id="login-pass" class="field" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin()" />
+        </div>
+        <div class="pt-1"><button class="btn-gold" onclick="doLogin()">Entrar →</button></div>
+      </div>
+      <p class="text-center text-xs mt-5" style="color:var(--muted);">¿Aún no tienes cuenta? <button onclick="showView('view-request')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;text-decoration:underline;font-size:.75rem;font-family:'Inter',sans-serif;">Solicitar acceso</button></p>
+      <button onclick="showView('view-welcome')" class="mt-3 text-sm text-center w-full" style="background:none;border:none;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: CONFIGURACIÓN (ONBOARDING) -->
+<div id="view-onboarding" class="view">
+  <div class="min-h-screen pb-10">
+    <div style="background:var(--deep-blue);" class="px-5 pt-10 pb-6">
+      <div class="flex items-center gap-3 mb-1">
+        <div class="logo-mark">A</div>
+        <div>
+          <h2 class="font-display text-xl font-semibold text-white">Configuración</h2>
+          <p class="text-xs" style="color:rgba(255,255,255,.55)">Gestiona grados, materias y tipos de evaluación</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-4 pt-5 max-w-lg mx-auto flex flex-col gap-4">
+
+      <!-- GRADOS -->
+      <div class="onboard-section">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-base">🏫</span>
+          <h3 class="font-semibold text-sm" style="color:var(--deep-blue)">Grados asignados</h3>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="input-grado" class="field" placeholder="Ej. 6°A" style="flex:1;"
+            onkeydown="handleGradoEnter(event)" />
+          <input type="number" id="input-alumnos" class="field" placeholder="# alumnos" style="max-width:100px;" min="1"
+            onkeydown="if(event.key==='Enter') addItem('grado')" />
+          <button class="btn-blue" onclick="addItem('grado')">+ Add</button>
+        </div>
+        <div id="table-grado-wrap">
+          <table class="config-table" id="table-grado">
+            <thead><tr><th>Grado</th><th>Alumnos</th><th></th></tr></thead>
+            <tbody id="tbody-grado"></tbody>
+          </table>
+        </div>
+        <div id="empty-grado" class="text-xs text-center py-3" style="color:var(--muted);">Aún no has agregado grados.</div>
+      </div>
+
+      <!-- MATERIAS -->
+      <div class="onboard-section">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-base">📚</span>
+          <h3 class="font-semibold text-sm" style="color:var(--deep-blue)">Materias</h3>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="input-materia" class="field" placeholder="Ej. Matemáticas" style="flex:1;"
+            onkeydown="if(event.key==='Enter') addItem('materia')" />
+          <button class="btn-blue" onclick="addItem('materia')">+ Add</button>
+        </div>
+        <table class="config-table">
+          <thead><tr><th>Materia</th><th></th></tr></thead>
+          <tbody id="tbody-materia"></tbody>
+        </table>
+        <div id="empty-materia" class="text-xs text-center py-3" style="color:var(--muted);">Aún no has agregado materias.</div>
+      </div>
+
+      <!-- TIPOS EVALUACIÓN -->
+      <div class="onboard-section">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-base">📝</span>
+          <h3 class="font-semibold text-sm" style="color:var(--deep-blue)">Tipos de Evaluación</h3>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="input-tipo" class="field" placeholder="Ej. Examen Parcial" style="flex:1;"
+            onkeydown="if(event.key==='Enter') addItem('tipo')" />
+          <button class="btn-blue" onclick="addItem('tipo')">+ Add</button>
+        </div>
+        <table class="config-table">
+          <thead><tr><th>Tipo</th><th></th></tr></thead>
+          <tbody id="tbody-tipo"></tbody>
+        </table>
+        <div id="empty-tipo" class="text-xs text-center py-3" style="color:var(--muted);">Aún no has agregado tipos.</div>
+      </div>
+
+      <button class="btn-gold mt-2" onclick="saveConfig()">Guardar cambios e ir al Dashboard →</button>
+      <p class="text-center text-xs pb-2" style="color:var(--muted);">
+        <span onclick="openDashboard()" style="cursor:pointer;">← Volver al dashboard</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW: DASHBOARD -->
+<div id="view-dashboard" class="view">
+  <div id="navbar">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="logo-mark" style="width:30px;height:30px;font-size:.8rem;">A</div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-widest" style="opacity:.5;">Bienvenida</p>
+          <h2 class="font-display text-base font-semibold leading-tight" id="nav-teacher-name">Profesora</h2>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openHistory()" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Historial de evaluaciones">📋</button>
+        <button onclick="showView('view-help')" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Instrucciones">📖</button>
+        <button onclick="showView('view-onboarding')" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Configuración">⚙️</button>
+        <button onclick="confirmLogout()" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Cerrar sesión">🚪</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="filter-bar">
+    <p class="text-xs font-semibold uppercase tracking-widest mb-2" style="color:rgba(255,255,255,.45);">Filtrar por</p>
+    <div class="flex gap-2">
+      <select id="filter-grado" onchange="applyFilters()" class="flex-1"><option value="">Todos los grados</option></select>
+      <select id="filter-materia" onchange="applyFilters()" class="flex-1"><option value="">Todas las materias</option></select>
+      <select id="filter-fecha" onchange="applyFilters()" class="flex-1">
+        <option value="">Todas las fechas</option>
+        <option value="mes_actual">Este mes</option>
+        <option value="proximos_7">Próximos 7 días</option>
+        <option value="proximo_mes">Próximo mes</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="px-3 pb-28 max-w-lg mx-auto">
+    <div class="mt-4 mb-5 cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <span class="font-display font-semibold text-sm" id="cal-title" style="color:var(--deep-blue);"></span>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div id="cal-grid">
+        <div class="cal-header-cell">Dom</div>
+        <div class="cal-header-cell">Lun</div>
+        <div class="cal-header-cell">Mar</div>
+        <div class="cal-header-cell">Mié</div>
+        <div class="cal-header-cell">Jue</div>
+        <div class="cal-header-cell">Vie</div>
+        <div class="cal-header-cell">Sáb</div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 mb-4">
+      <div class="flex-1 h-px" style="background:var(--border);"></div>
+      <span class="text-xs font-semibold uppercase tracking-widest" style="color:var(--muted);">Evaluaciones</span>
+      <div class="flex-1 h-px" style="background:var(--border);"></div>
+    </div>
+
+    <div id="task-list" class="flex flex-col gap-3"></div>
+    <div id="empty-state" class="hidden text-center py-12">
+      <div class="text-4xl mb-3">📋</div>
+      <p class="font-semibold" style="color:var(--deep-blue);">Sin evaluaciones agendadas</p>
+      <p class="text-sm mt-1" style="color:var(--muted);">Toca <strong>+</strong> para agendar la primera.</p>
+    </div>
+  </div>
+
+  <button id="fab" onclick="openModal(null)" title="Agendar evaluación">+</button>
+</div>
+
+<!-- VIEW: INSTRUCCIONES -->
+<div id="view-help" class="view">
+  <div class="min-h-screen pb-10">
+    <div id="navbar-help">
+      <button onclick="goBackFromHelp()">←</button>
+      <div>
+        <p class="text-xs font-medium uppercase tracking-widest" style="opacity:.5;">Aurushen</p>
+        <h2 class="font-display text-base font-semibold leading-tight">Instrucciones de uso</h2>
+      </div>
+    </div>
+    <div class="px-4 pt-5 max-w-lg mx-auto flex flex-col">
+      <div class="help-card">
+        <h3>🔐 Solicitar acceso e iniciar sesión</h3>
+        <p>Al abrir la aplicación verás la pantalla de bienvenida. Si es tu primera vez, toca <em>Solicitar Acceso</em> y completa el formulario con tu nombre, apellido, correo y teléfono.</p>
+        <p>En las próximas horas recibirás un correo con tu usuario y contraseña. La próxima vez usa <strong>Iniciar Sesión</strong> con esas credenciales.</p>
+      </div>
+      <div class="help-card">
+        <h3>⚙️ Configurar tu entorno</h3>
+        <p>La primera vez que entres, el sistema te llevará a la pantalla de <strong>Configuración</strong>. Aquí debes registrar:</p>
+        <div class="help-step"><div class="num">1</div><div class="txt"><strong>Grados asignados</strong>: escribe el nombre del grado (ej. <em>6°A</em>) y la cantidad de alumnos, luego toca <strong>"+ Add"</strong> o presiona Enter.</div></div>
+        <div class="help-step"><div class="num">2</div><div class="txt"><strong>Materias</strong>: escribe el nombre de cada materia que impartes (ej. <em>Matemáticas</em>) y toca <strong>"+ Add"</strong> o presiona Enter.</div></div>
+        <div class="help-step"><div class="num">3</div><div class="txt"><strong>Tipos de Evaluación</strong>: escribe los tipos que usas (ej. <em>Examen Parcial, Quiz, Taller</em>) y toca <strong>"+ Add"</strong> o presiona Enter.</div></div>
+        <p>Cuando termines, presiona <strong>"Guardar cambios e ir al Dashboard"</strong>. Puedes volver a esta pantalla cuando quieras tocando el ícono ⚙️ en la parte superior.</p>
+      </div>
+      <div class="help-card">
+        <h3>🏠 Pantalla principal (Dashboard)</h3>
+        <p>Aquí verás un <strong>calendario</strong> con tus evaluaciones agendadas, y una lista debajo llamada <em>Evaluaciones</em>.</p>
+        <p>Usa los filtros de arriba (<em>grado</em>, <em>materia</em> y <em>fecha</em>) para ver solo lo que necesites. Toca las flechas ‹ › del calendario para cambiar de mes. También puedes tocar cualquier día vacío del calendario para agendar una evaluación en esa fecha directamente.</p>
+      </div>
+      <div class="help-card">
+        <h3>➕ Agendar una evaluación</h3>
+        <p>Toca el botón circular <strong>"+"</strong> en la esquina inferior derecha. Completa:</p>
+        <div class="help-step"><div class="num">1</div><div class="txt"><strong>Grado</strong>, <strong>Materia</strong> y <strong>Tipo de Evaluación</strong> (elige de las listas que configuraste).</div></div>
+        <div class="help-step"><div class="num">2</div><div class="txt"><strong>Fecha</strong> en que se realizará.</div></div>
+        <div class="help-step"><div class="num">3</div><div class="txt"><strong>Contenido o descripción</strong>: qué se va a evaluar.</div></div>
+        <p>Finaliza presionando <strong>"Guardar Evaluación"</strong>. Aparecerá en el calendario y en la lista de evaluaciones.</p>
+      </div>
+      <div class="help-card">
+        <h3>✏️ Editar o eliminar</h3>
+        <p>En cada tarjeta de evaluación, o tocando su recuadro de color en el calendario, puedes presionar <strong>"Editar"</strong> para modificar los datos, o <strong>"Eliminar"</strong> para quitarla.</p>
+        <p>Lo mismo aplica para los grados, materias y tipos en la pantalla de Configuración.</p>
+      </div>
+      <div class="help-card">
+        <h3>💡 Recomendaciones</h3>
+        <p>Configura primero tus grados, materias y tipos de evaluación antes de agendar. Revisa el calendario semanalmente para mantener tu agenda al día.</p>
+      </div>
+      <button class="btn-gold mt-2 mb-4" onclick="helpGoToConfig()">Ir a Configuración →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: AGENDAR / EDITAR EVALUACIÓN -->
+<div id="modal-overlay" onclick="closeModalOutside(event,'modal-overlay')">
+  <div id="modal-box">
+    <div class="w-10 h-1 rounded-full mx-auto mb-5" style="background:#D4CCB4;"></div>
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display text-xl font-semibold" style="color:var(--deep-blue);" id="modal-title">Agendar Evaluación</h3>
+      <button onclick="closeModal('modal-overlay')" class="w-8 h-8 rounded-full flex items-center justify-center text-xl" style="background:#F0EBD8;color:var(--muted);">×</button>
+    </div>
+    <div class="flex flex-col gap-4">
+      <div>
+        <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">GRADO</label>
+        <select id="modal-grado" class="field"><option value="">Selecciona un grado</option></select>
+      </div>
+      <div>
+        <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">MATERIA</label>
+        <select id="modal-materia" class="field"><option value="">Selecciona una materia</option></select>
+      </div>
+      <div>
+        <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">TIPO DE EVALUACIÓN</label>
+        <select id="modal-tipo" class="field"><option value="">Selecciona el tipo</option></select>
+      </div>
+      <div>
+        <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">FECHA</label>
+        <input type="date" id="modal-fecha" class="field" />
+      </div>
+      <div>
+        <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CONTENIDO / DESCRIPCIÓN</label>
+        <textarea id="modal-contenido" class="field" rows="3" placeholder="Describe el contenido a evaluar…"></textarea>
+      </div>
+      <input type="hidden" id="modal-edit-id" value="" />
+      <button class="btn-gold mt-1" onclick="scheduleEval()">Guardar Evaluación ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR ITEM CONFIG -->
+<div id="edit-modal-overlay" onclick="closeModalOutside(event,'edit-modal-overlay')">
+  <div id="edit-modal-box">
+    <div class="w-10 h-1 rounded-full mx-auto mb-5" style="background:#D4CCB4;"></div>
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display text-xl font-semibold" style="color:var(--deep-blue);" id="edit-config-title">Editar</h3>
+      <button onclick="closeModal('edit-modal-overlay')" class="w-8 h-8 rounded-full flex items-center justify-center text-xl" style="background:#F0EBD8;color:var(--muted);">×</button>
+    </div>
+    <div class="flex flex-col gap-4">
+      <input type="hidden" id="edit-config-type" />
+      <input type="hidden" id="edit-config-idx" />
+      <div id="edit-config-fields"></div>
+      <button class="btn-gold mt-1" onclick="saveConfigEdit()">Guardar cambios ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR LOGOUT -->
+<div id="logout-modal-overlay" class="modal-overlay">
+  <div id="logout-modal-box" class="modal-box">
+    <div class="modal-handle"></div>
+    <h2 style="font-family:'Fraunces',serif; color:var(--deep-blue); font-size:1.25rem; font-weight:700; margin-bottom:.5rem;">¿Cerrar sesión?</h2>
+    <p style="color:var(--muted); font-size:.9rem; margin-bottom:1.25rem;">¿Estás segura de que quieres salir? Tendrás que volver a ingresar con tus credenciales.</p>
+    <button onclick="doLogout()" style="width:100%; background:#DC2626; color:white; border:none; border-radius:10px; font-weight:600; padding:.75rem; margin-bottom:.5rem; cursor:pointer;">Sí, cerrar sesión</button>
+    <button class="btn-ghost" onclick="closeModal('logout-modal-overlay')" style="width:100%;">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR ELIMINAR EVALUACIÓN -->
+<div id="delete-eval-modal-overlay" class="modal-overlay" onclick="closeModalOutside(event,'delete-eval-modal-overlay')">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div style="font-size:2rem;text-align:center;margin-bottom:.75rem;">🗑️</div>
+    <h2 style="font-family:'Fraunces',serif;color:var(--deep-blue);font-size:1.15rem;font-weight:700;margin-bottom:.4rem;text-align:center;">¿Eliminar evaluación?</h2>
+    <p id="delete-eval-desc" style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem;text-align:center;line-height:1.55;"></p>
+    <button onclick="confirmDeleteEval()" style="width:100%;background:#DC2626;color:white;border:none;border-radius:10px;font-weight:600;padding:.75rem;margin-bottom:.5rem;cursor:pointer;font-family:'Inter',sans-serif;">Sí, eliminar</button>
+    <button class="btn-ghost" onclick="closeModal('delete-eval-modal-overlay')" style="width:100%;">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR ELIMINAR CONFIG -->
+<div id="delete-config-modal-overlay" class="modal-overlay" onclick="closeModalOutside(event,'delete-config-modal-overlay')">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div style="font-size:2rem;text-align:center;margin-bottom:.75rem;">⚠️</div>
+    <h2 id="delete-config-title" style="font-family:'Fraunces',serif;color:var(--deep-blue);font-size:1.15rem;font-weight:700;margin-bottom:.4rem;text-align:center;">¿Eliminar?</h2>
+    <p id="delete-config-desc" style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem;text-align:center;line-height:1.55;"></p>
+    <button onclick="confirmDeleteConfig()" style="width:100%;background:#DC2626;color:white;border:none;border-radius:10px;font-weight:600;padding:.75rem;margin-bottom:.5rem;cursor:pointer;font-family:'Inter',sans-serif;">Sí, eliminar</button>
+    <button class="btn-ghost" onclick="closeModal('delete-config-modal-overlay')" style="width:100%;">Cancelar</button>
+  </div>
+</div>
+
+<!-- MODAL: HISTORIAL DE EVALUACIONES -->
+<div id="history-modal-overlay" class="modal-overlay" onclick="closeModalOutside(event,'history-modal-overlay')">
+  <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:2rem;">
+    <div class="modal-handle"></div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 style="font-family:'Fraunces',serif;color:var(--deep-blue);font-size:1.2rem;font-weight:700;margin:0;">📋 Historial</h2>
+      <button onclick="closeModal('history-modal-overlay')" class="w-8 h-8 rounded-full flex items-center justify-center text-xl" style="background:#F0EBD8;color:var(--muted);border:none;cursor:pointer;">×</button>
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem;">Solo evaluaciones activas · Filtra por grado o materia</p>
+
+    <!-- Filtros del historial -->
+    <div class="history-filter-bar">
+      <select id="history-filter-grado" onchange="renderHistory()">
+        <option value="">Todos los grados</option>
+      </select>
+      <select id="history-filter-materia" onchange="renderHistory()">
+        <option value="">Todas las materias</option>
+      </select>
+    </div>
+
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════
+   CONSTANTES
+══════════════════════════════════════ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRV5rtVqnTCAVD0n5yNwH0EGZawTyRgYwDXEKFXmWDwa5uoOjRjdrzDQMGeM5O0oVzEw/exec'; // TODO: reemplazar con URL real del Web App de Google Apps Script
+const APP_VERSION = '1.0.0-MVP';
+
+// La solicitud llega a Google Sheets via Apps Script.
+// El script crea el ID, genera usuario y contraseña,
+// clona las pestañas del usuario y envía el correo con credenciales.
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+const S = {
+  user: null,
+  config: { grados: [], materias: [], tipos: [] },
+  evals: [],
+  calMonth: new Date().getMonth(),
+  calYear:  new Date().getFullYear(),
+  fGrado:   '',
+  fMateria: '',
+  fFecha:   '',
+  prevView: 'view-welcome'
+};
+
+const chipCache = {};
+const CHIP_CLASSES = ['chip-0','chip-1','chip-2','chip-3','chip-4','chip-5','chip-6'];
+function chipClass(materia) {
+  if (!chipCache[materia]) {
+    const idx = Object.keys(chipCache).length % CHIP_CLASSES.length;
+    chipCache[materia] = CHIP_CLASSES[idx];
+  }
+  return chipCache[materia];
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function showView(id) {
+  const current = document.querySelector('.view.active');
+  if (current && id === 'view-help') S.prevView = current.id;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function goBackFromHelp() { showView(S.prevView || 'view-welcome'); }
+
+function helpGoToConfig() {
+  if (S.user) showView('view-onboarding');
+  else showView('view-login');
+}
+
+/* ══════════════════════════════════════
+   SESIÓN
+══════════════════════════════════════ */
+function checkSession() {
+  const raw = localStorage.getItem('aurushen_session');
+  if (!raw) { showView('view-welcome'); return; }
+  try {
+    const session = JSON.parse(raw);
+    S.user = session;
+    document.getElementById('nav-teacher-name').textContent = 'Profa. ' + session.nombre;
+    openDashboard();
+  } catch(e) {
+    localStorage.removeItem('aurushen_session');
+    showView('view-welcome');
+  }
+}
+
+function loginSuccess(userData) {
+  localStorage.setItem('aurushen_session', JSON.stringify(userData));
+  S.user = userData;
+  document.getElementById('nav-teacher-name').textContent = 'Profa. ' + userData.nombre;
+  if (!S.config.grados.length) {
+    toast('¡Bienvenida! Lee las instrucciones para comenzar.');
+    showView('view-help');
+  } else {
+    openDashboard();
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('aurushen_session');
+  S.user = null;
+  closeModal('logout-modal-overlay');
+  showView('view-welcome');
+  toast('Sesión cerrada correctamente');
+}
+
+function confirmLogout() {
+  document.getElementById('logout-modal-overlay').classList.add('active');
+}
+
+/* ══════════════════════════════════════
+   AUTH — LOGIN
+══════════════════════════════════════ */
+async function doLogin() {
+  const correo     = document.getElementById('login-email').value.trim();
+  const contrasena = document.getElementById('login-pass').value.trim();
+  if (!correo || !contrasena) { toast('Por favor completa todos los campos.', true); return; }
+  if (!APPS_SCRIPT_URL) {
+    const userData = { userId: 'DOC-001', nombre: 'Profesora', apellido: 'Demo', correo };
+    loginSuccess(userData);
+    return;
+  }
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'login', correo, contrasena })
+    });
+    const data = await resp.json();
+    if (!data.ok) { toast('Correo o contraseña incorrectos.', true); return; }
+    loginSuccess(data.usuario);
+  } catch(e) {
+    console.error('Error en login:', e);
+    toast('Error de conexión: ' + e.message, true);
+  }
+}
+
+/* ══════════════════════════════════════
+   AUTH — SOLICITUD DE ACCESO
+══════════════════════════════════════ */
+async function submitRequest() {
+  const nombre   = document.getElementById('req-nombre').value.trim();
+  const apellido = document.getElementById('req-apellido').value.trim();
+  const correo   = document.getElementById('req-correo').value.trim();
+  const telefono = document.getElementById('req-telefono').value.trim();
+  if (!nombre || !apellido || !correo || !telefono) { toast('Por favor completa todos los campos.', true); return; }
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'solicitud', nombre, apellido, correo, telefono })
+    });
+    const data = await resp.json();
+    if (!data.ok) { toast(data.error || 'No se pudo enviar la solicitud.', true); return; }
+  } catch(e) {
+    console.error('Error al enviar solicitud:', e);
+    toast('Error de conexión: ' + e.message, true);
+    return;
+  }
+  showView('view-confirm');
+}
+
+/* ══════════════════════════════════════
+   SINCRONIZACIÓN (esqueleto — falla silenciosa)
+══════════════════════════════════════ */
+async function syncToSheets(payload) {
+  if (!APPS_SCRIPT_URL) return;
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {
+    console.warn('Sync con Sheets falló (esperado en desarrollo):', e.message);
+  }
+}
+
+async function syncConfigToSheets() {
+  if (!S.user) return;
+  await syncToSheets({ accion: 'guardarConfig', userId: S.user.userId, grados: S.config.grados, materias: S.config.materias, tipos: S.config.tipos });
+}
+
+async function syncEvalToSheets(evalObj, accion = 'agregarEval') {
+  if (!S.user) return;
+  await syncToSheets({ accion, userId: S.user.userId, eval: evalObj });
+}
+
+/* ══════════════════════════════════════
+   CONFIGURACIÓN — Enter en campos
+══════════════════════════════════════ */
+// Para grado: si está en el campo de nombre y presiona Enter, salta a alumnos
+// Si está en alumnos y presiona Enter, agrega
+function handleGradoEnter(event) {
+  if (event.key === 'Enter') {
+    const alumnosInput = document.getElementById('input-alumnos');
+    const alumnosVal = alumnosInput.value.trim();
+    // Si ya hay alumnos ingresados, agregar directamente
+    if (alumnosVal) {
+      addItem('grado');
+    } else {
+      // Sino, mover el foco al campo de alumnos
+      alumnosInput.focus();
+    }
+  }
+}
+
+function addItem(type) {
+  if (type === 'grado') {
+    const val     = document.getElementById('input-grado').value.trim();
+    const alumnos = parseInt(document.getElementById('input-alumnos').value) || 0;
+    if (!val) return toast('Escribe el nombre del grado');
+    if (S.config.grados.find(g => g.label===val)) return toast('Ese grado ya existe');
+    S.config.grados.push({ label:val, alumnos });
+    document.getElementById('input-grado').value   = '';
+    document.getElementById('input-alumnos').value = '';
+    document.getElementById('input-grado').focus();
+
+  } else if (type === 'materia') {
+    const val = document.getElementById('input-materia').value.trim();
+    if (!val) return toast('Escribe el nombre de la materia');
+    if (S.config.materias.includes(val)) return toast('Esa materia ya existe');
+    S.config.materias.push(val);
+    document.getElementById('input-materia').value = '';
+    document.getElementById('input-materia').focus();
+
+  } else if (type === 'tipo') {
+    const val = document.getElementById('input-tipo').value.trim();
+    if (!val) return toast('Escribe el tipo de evaluación');
+    if (S.config.tipos.includes(val)) return toast('Ese tipo ya existe');
+    S.config.tipos.push(val);
+    document.getElementById('input-tipo').value = '';
+    document.getElementById('input-tipo').focus();
+  }
+  renderConfigTable(type);
+}
+
+function deleteConfigItem(type, idx) {
+  _pendingDeleteConfig = { type, idx };
+  const labels = { grado: 'el grado', materia: 'la materia', tipo: 'el tipo de evaluación' };
+  const names  = { grado: S.config.grados[idx]?.label, materia: S.config.materias[idx], tipo: S.config.tipos[idx] };
+  document.getElementById('delete-config-title').textContent = '¿Eliminar ' + labels[type] + '?';
+  document.getElementById('delete-config-desc').innerHTML = 'Se eliminará <strong>"' + names[type] + '"</strong>. Esta acción no se puede deshacer.';
+  document.getElementById('delete-config-modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function confirmDeleteConfig() {
+  if (!_pendingDeleteConfig) return;
+  const { type, idx } = _pendingDeleteConfig;
+  if (type==='grado')   S.config.grados.splice(idx,1);
+  if (type==='materia') S.config.materias.splice(idx,1);
+  if (type==='tipo')    S.config.tipos.splice(idx,1);
+  _pendingDeleteConfig = null;
+  closeModal('delete-config-modal-overlay');
+  renderConfigTable(type);
+  toast('Eliminado correctamente');
+}
+
+function openConfigEdit(type, idx) {
+  document.getElementById('edit-config-type').value = type;
+  document.getElementById('edit-config-idx').value  = idx;
+  const fields = document.getElementById('edit-config-fields');
+  if (type === 'grado') {
+    const g = S.config.grados[idx];
+    document.getElementById('edit-config-title').textContent = 'Editar Grado';
+    fields.innerHTML = `
+      <div><label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">GRADO</label>
+      <input type="text" id="edt-grado-label" class="field" value="${g.label}" /></div>
+      <div><label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CANTIDAD DE ALUMNOS</label>
+      <input type="number" id="edt-grado-alumnos" class="field" value="${g.alumnos}" min="1" /></div>`;
+  } else if (type === 'materia') {
+    const m = S.config.materias[idx];
+    document.getElementById('edit-config-title').textContent = 'Editar Materia';
+    fields.innerHTML = `<div><label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">MATERIA</label>
+      <input type="text" id="edt-materia-val" class="field" value="${m}" /></div>`;
+  } else {
+    const t = S.config.tipos[idx];
+    document.getElementById('edit-config-title').textContent = 'Editar Tipo de Evaluación';
+    fields.innerHTML = `<div><label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">TIPO</label>
+      <input type="text" id="edt-tipo-val" class="field" value="${t}" /></div>`;
+  }
+  document.getElementById('edit-modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function saveConfigEdit() {
+  const type = document.getElementById('edit-config-type').value;
+  const idx  = parseInt(document.getElementById('edit-config-idx').value);
+  if (type === 'grado') {
+    const label   = document.getElementById('edt-grado-label').value.trim();
+    const alumnos = parseInt(document.getElementById('edt-grado-alumnos').value)||0;
+    if (!label) return toast('El nombre del grado no puede estar vacío');
+    S.config.grados[idx] = { label, alumnos };
+  } else if (type === 'materia') {
+    const val = document.getElementById('edt-materia-val').value.trim();
+    if (!val) return toast('El nombre no puede estar vacío');
+    S.config.materias[idx] = val;
+  } else {
+    const val = document.getElementById('edt-tipo-val').value.trim();
+    if (!val) return toast('El tipo no puede estar vacío');
+    S.config.tipos[idx] = val;
+  }
+  renderConfigTable(type);
+  closeModal('edit-modal-overlay');
+  toast('Cambio guardado ✓');
+}
+
+function renderConfigTable(type) {
+  if (type === 'grado') {
+    const tbody = document.getElementById('tbody-grado');
+    const empty = document.getElementById('empty-grado');
+    const items = S.config.grados;
+    empty.style.display = items.length ? 'none' : 'block';
+    tbody.innerHTML = items.map((g,i) => `
+      <tr>
+        <td class="font-medium">${g.label}</td>
+        <td style="color:var(--muted);">${g.alumnos || '—'}</td>
+        <td class="text-right" style="white-space:nowrap;">
+          <button class="btn-edit" onclick="openConfigEdit('grado',${i})">✏️ Editar</button>
+          <button class="btn-danger" onclick="deleteConfigItem('grado',${i})">🗑 Eliminar</button>
+        </td>
+      </tr>`).join('');
+  } else if (type === 'materia') {
+    const tbody = document.getElementById('tbody-materia');
+    const empty = document.getElementById('empty-materia');
+    const items = S.config.materias;
+    empty.style.display = items.length ? 'none' : 'block';
+    tbody.innerHTML = items.map((m,i) => `
+      <tr>
+        <td class="font-medium">${m}</td>
+        <td class="text-right" style="white-space:nowrap;">
+          <button class="btn-edit" onclick="openConfigEdit('materia',${i})">✏️ Editar</button>
+          <button class="btn-danger" onclick="deleteConfigItem('materia',${i})">🗑 Eliminar</button>
+        </td>
+      </tr>`).join('');
+  } else {
+    const tbody = document.getElementById('tbody-tipo');
+    const empty = document.getElementById('empty-tipo');
+    const items = S.config.tipos;
+    empty.style.display = items.length ? 'none' : 'block';
+    tbody.innerHTML = items.map((t,i) => `
+      <tr>
+        <td class="font-medium">${t}</td>
+        <td class="text-right" style="white-space:nowrap;">
+          <button class="btn-edit" onclick="openConfigEdit('tipo',${i})">✏️ Editar</button>
+          <button class="btn-danger" onclick="deleteConfigItem('tipo',${i})">🗑 Eliminar</button>
+        </td>
+      </tr>`).join('');
+  }
+}
+
+function saveConfig() {
+  if (!S.config.grados.length)   return toast('Agrega al menos un grado');
+  if (!S.config.materias.length) return toast('Agrega al menos una materia');
+  if (!S.config.tipos.length)    return toast('Agrega al menos un tipo de evaluación');
+  syncConfigToSheets();
+  toast('Configuración guardada ✓');
+  setTimeout(openDashboard, 500);
+}
+
+/* ══════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════ */
+function openDashboard() {
+  populateSelects();
+  renderCalendar();
+  renderTasks();
+  showView('view-dashboard');
+}
+
+function populateSelects() {
+  const grados   = S.config.grados.map(g => g.label);
+  const materias = S.config.materias;
+  const tipos    = S.config.tipos;
+
+  ['filter-grado','modal-grado'].forEach(id => {
+    const sel = document.getElementById(id);
+    const isF = id.startsWith('filter');
+    sel.innerHTML = `<option value="">${isF?'Todos los grados':'Selecciona un grado'}</option>` +
+      grados.map(g=>`<option value="${g}">${g}</option>`).join('');
+  });
+  ['filter-materia','modal-materia'].forEach(id => {
+    const sel = document.getElementById(id);
+    const isF = id.startsWith('filter');
+    sel.innerHTML = `<option value="">${isF?'Todas las materias':'Selecciona una materia'}</option>` +
+      materias.map(m=>`<option value="${m}">${m}</option>`).join('');
+  });
+  document.getElementById('modal-tipo').innerHTML =
+    `<option value="">Selecciona el tipo</option>` +
+    tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
+}
+
+function applyFilters() {
+  S.fGrado   = document.getElementById('filter-grado').value;
+  S.fMateria = document.getElementById('filter-materia').value;
+  S.fFecha   = document.getElementById('filter-fecha').value;
+  renderCalendar();
+  renderTasks();
+}
+
+function getFiltered() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return S.evals.filter(e => {
+    if (e.estado_registro === 'borrado') return false;
+    if (S.fGrado   && e.grado   !== S.fGrado)   return false;
+    if (S.fMateria && e.materia !== S.fMateria)  return false;
+    if (S.fFecha) {
+      const evalDate = new Date(e.fecha + 'T00:00:00');
+      if (S.fFecha === 'mes_actual') {
+        if (evalDate.getFullYear() !== today.getFullYear() || evalDate.getMonth() !== today.getMonth()) return false;
+      } else if (S.fFecha === 'proximos_7') {
+        const limit = new Date(today); limit.setDate(limit.getDate()+7);
+        if (evalDate < today || evalDate > limit) return false;
+      } else if (S.fFecha === 'proximo_mes') {
+        const nm    = new Date(today.getFullYear(), today.getMonth()+1, 1);
+        const nmEnd = new Date(today.getFullYear(), today.getMonth()+2, 0);
+        if (evalDate < nm || evalDate > nmEnd) return false;
+      }
+    }
+    return true;
+  });
+}
+
+/* ══════════════════════════════════════
+   CALENDAR
+══════════════════════════════════════ */
+function changeMonth(delta) {
+  S.calMonth += delta;
+  if (S.calMonth > 11) { S.calMonth=0; S.calYear++; }
+  if (S.calMonth < 0)  { S.calMonth=11; S.calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-title').textContent = MONTHS[S.calMonth] + ' ' + S.calYear;
+  const today      = new Date();
+  const firstDay   = new Date(S.calYear, S.calMonth, 1).getDay();
+  const daysInMo   = new Date(S.calYear, S.calMonth+1, 0).getDate();
+  const daysInPrev = new Date(S.calYear, S.calMonth, 0).getDate();
+  const filtered   = getFiltered();
+  const dayMap     = {};
+  filtered.forEach(e => {
+    if (!dayMap[e.fecha]) dayMap[e.fecha] = [];
+    dayMap[e.fecha].push(e);
+  });
+  const grid = document.getElementById('cal-grid');
+  Array.from(grid.children).slice(7).forEach(c => c.remove());
+
+  function makeCell(dayNum, dateStr, isOther, isToday) {
+    const div = document.createElement('div');
+    div.className = 'cal-cell' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '');
+    div.onclick = () => { if (dateStr) openModal(null, dateStr); };
+    const num = document.createElement('div');
+    num.className = 'cal-day-num';
+    num.textContent = dayNum;
+    div.appendChild(num);
+    if (dateStr && dayMap[dateStr]) {
+      const evs = dayMap[dateStr];
+      evs.slice(0, 2).forEach(ev => {
+        const chip = document.createElement('span');
+        chip.className = 'cal-event-chip ' + chipClass(ev.materia);
+        chip.textContent = ev.grado + ' ' + ev.materia;
+        chip.title = ev.grado + ' · ' + ev.materia + ' · ' + ev.tipo;
+        chip.onclick = (e) => { e.stopPropagation(); openModal(ev.id); };
+        div.appendChild(chip);
+      });
+      if (evs.length > 2) {
+        const more = document.createElement('span');
+        more.className = 'cal-event-chip';
+        more.style.cssText = 'background:#F3EFE0;color:var(--muted);';
+        more.textContent = '+' + (evs.length-2) + ' más';
+        div.appendChild(more);
+      }
+    }
+    return div;
+  }
+
+  for (let i = firstDay-1; i >= 0; i--) grid.appendChild(makeCell(daysInPrev-i, null, true, false));
+  for (let d = 1; d <= daysInMo; d++) {
+    const ds = `${S.calYear}-${String(S.calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isTd = d===today.getDate() && S.calMonth===today.getMonth() && S.calYear===today.getFullYear();
+    grid.appendChild(makeCell(d, ds, false, isTd));
+  }
+  const total = firstDay + daysInMo;
+  const rem   = total%7===0 ? 0 : 7-(total%7);
+  for (let d = 1; d <= rem; d++) grid.appendChild(makeCell(d, null, true, false));
+}
+
+/* ══════════════════════════════════════
+   TASK CARDS
+══════════════════════════════════════ */
+function getEstadoAuto(fecha) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(fecha + 'T00:00:00');
+  return d < hoy ? 'Completada' : 'Pendiente';
+}
+
+const TYPE_COLORS = {
+  'Examen Parcial':'#FDE68A','Quiz':'#BBF7D0','Taller':'#BFDBFE',
+  'Proyecto':'#F9A8D4','default':'#E5E7EB'
+};
+
+function fmtDate(str) {
+  const [y,m,d] = str.split('-');
+  const MO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(d)} ${MO[parseInt(m)-1]} ${y}`;
+}
+
+/* ══════════════════════════════════════
+   HISTORIAL — con filtros
+══════════════════════════════════════ */
+function openHistory() {
+  // Poblar selectores del historial con los grados y materias de la config
+  const gradoSel   = document.getElementById('history-filter-grado');
+  const materiaSel = document.getElementById('history-filter-materia');
+
+  gradoSel.innerHTML   = '<option value="">Todos los grados</option>' +
+    S.config.grados.map(g => `<option value="${g.label}">${g.label}</option>`).join('');
+  materiaSel.innerHTML = '<option value="">Todas las materias</option>' +
+    S.config.materias.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  // Resetear selects al abrir
+  gradoSel.value   = '';
+  materiaSel.value = '';
+
+  renderHistory();
+  document.getElementById('history-modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderHistory() {
+  const fGrado   = document.getElementById('history-filter-grado').value;
+  const fMateria = document.getElementById('history-filter-materia').value;
+
+  const all = S.evals
+    .filter(e => {
+      if (e.estado_registro === 'borrado') return false;
+      if (fGrado   && e.grado   !== fGrado)   return false;
+      if (fMateria && e.materia !== fMateria)  return false;
+      return true;
+    })
+    .sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+  const list = document.getElementById('history-list');
+
+  if (!all.length) {
+    list.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.88rem;padding:2rem 0;">No hay evaluaciones que coincidan con los filtros.</p>';
+    return;
+  }
+
+  list.innerHTML = all.map(ev => {
+    const estado = getEstadoAuto(ev.fecha);
+    const tc     = TYPE_COLORS[ev.tipo] || TYPE_COLORS.default;
+    const isDone = estado === 'Completada';
+    return `<div style="background:#fff;border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;border-left:4px solid ${isDone ? '#059669' : 'var(--gold)'};box-shadow:0 1px 5px rgba(0,0,0,.05);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.35rem;">
+        <div>
+          <p style="font-weight:600;font-size:.85rem;color:var(--deep-blue);margin:0;">${ev.grado} · ${ev.materia}</p>
+          <p style="font-size:.75rem;color:var(--muted);margin:.15rem 0 0;">${fmtDate(ev.fecha)}</p>
+        </div>
+        <span class="badge ${isDone ? 'badge-done' : 'badge-pending'}">${estado}</span>
+      </div>
+      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:999px;background:${tc};color:var(--dark);">${ev.tipo}</span>
+      <p style="font-size:.82rem;color:var(--dark);margin:.45rem 0 0;line-height:1.5;">${ev.contenido}</p>
+    </div>`;
+  }).join('');
+}
+
+function renderTasks() {
+  const list  = document.getElementById('task-list');
+  const empty = document.getElementById('empty-state');
+  const items = getFiltered().sort((a,b) => a.fecha.localeCompare(b.fecha));
+  if (!items.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  list.innerHTML = items.map(ev => {
+    const dL = Math.round((new Date(ev.fecha)-new Date())/86400000);
+    const dLabel = dL<0 ? 'Pasada' : dL===0 ? '¡Hoy!' : `En ${dL} día${dL!==1?'s':''}`;
+    const dColor = dL<0 ? 'var(--muted)' : dL<=1 ? '#dc2626' : 'var(--gold)';
+    const tc = TYPE_COLORS[ev.tipo]||TYPE_COLORS.default;
+    const estado = getEstadoAuto(ev.fecha);
+    const isDone = estado === 'Completada';
+    return `<div class="task-card${isDone?' opacity-60':''}">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <p class="font-semibold text-sm" style="color:var(--deep-blue);">${ev.grado} · ${ev.materia}</p>
+          <p class="text-xs mt-0.5" style="color:var(--muted);">${fmtDate(ev.fecha)} · <span style="color:${dColor};font-weight:600;">${dLabel}</span></p>
+        </div>
+        <span class="badge ${isDone?'badge-done':'badge-pending'}">${estado}</span>
+      </div>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:${tc};color:var(--dark);">${ev.tipo}</span>
+      </div>
+      <p class="text-sm mb-3" style="color:var(--dark);line-height:1.55;">${ev.contenido}</p>
+      <div class="flex gap-2 justify-end border-t pt-2" style="border-color:#F0EBD8;">
+        <button class="btn-ghost" onclick="openModal('${ev.id}')">✏️ Editar</button>
+        <button class="btn-danger" onclick="deleteEval('${ev.id}')">🗑 Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let _pendingDeleteEvalId = null;
+let _pendingDeleteConfig = null;
+
+function deleteEval(id) {
+  const ev = S.evals.find(e => e.id === id);
+  if (!ev) return;
+  _pendingDeleteEvalId = id;
+  const desc = `${ev.grado} · ${ev.materia} · ${ev.tipo}<br><span style="font-size:.78rem;">${fmtDate(ev.fecha)}</span>`;
+  document.getElementById('delete-eval-desc').innerHTML = 'Esta acción eliminará la evaluación:<br><strong>' + desc + '</strong>';
+  document.getElementById('delete-eval-modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function confirmDeleteEval() {
+  const id = _pendingDeleteEvalId;
+  if (!id) return;
+  const ev = S.evals.find(e => e.id === id);
+  if (ev) {
+    ev.estado_registro = 'borrado';
+    syncToSheets({ accion: 'eliminarEval', userId: S.user?.userId, evalId: id });
+  }
+  _pendingDeleteEvalId = null;
+  closeModal('delete-eval-modal-overlay');
+  renderCalendar();
+  renderTasks();
+  toast('Evaluación eliminada');
+}
+
+/* ══════════════════════════════════════
+   MODAL AGENDAR / EDITAR
+══════════════════════════════════════ */
+function openModal(editId, preselectedDate) {
+  populateSelects();
+  const title = document.getElementById('modal-title');
+  const hidId = document.getElementById('modal-edit-id');
+  if (editId) {
+    const ev = S.evals.find(e => e.id===editId);
+    if (!ev) return;
+    title.textContent = 'Editar Evaluación';
+    hidId.value = editId;
+    document.getElementById('modal-grado').value     = ev.grado;
+    document.getElementById('modal-materia').value   = ev.materia;
+    document.getElementById('modal-tipo').value      = ev.tipo;
+    document.getElementById('modal-fecha').value     = ev.fecha;
+    document.getElementById('modal-contenido').value = ev.contenido;
+  } else {
+    title.textContent = 'Agendar Evaluación';
+    hidId.value = '';
+    document.getElementById('modal-grado').value     = '';
+    document.getElementById('modal-materia').value   = '';
+    document.getElementById('modal-tipo').value      = '';
+    document.getElementById('modal-fecha').value     = preselectedDate || new Date().toISOString().split('T')[0];
+    document.getElementById('modal-contenido').value = '';
+  }
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function scheduleEval() {
+  const grado     = document.getElementById('modal-grado').value;
+  const materia   = document.getElementById('modal-materia').value;
+  const tipo      = document.getElementById('modal-tipo').value;
+  const fecha     = document.getElementById('modal-fecha').value;
+  const contenido = document.getElementById('modal-contenido').value.trim();
+  const editId    = document.getElementById('modal-edit-id').value;
+  if (!grado||!materia||!tipo||!fecha||!contenido) return toast('Completa todos los campos');
+  if (editId) {
+    const idx = S.evals.findIndex(e => e.id===editId);
+    if (idx>=0) {
+      S.evals[idx] = { ...S.evals[idx], grado, materia, tipo, fecha, contenido };
+      syncEvalToSheets(S.evals[idx], 'editarEval');
+    }
+    toast('Evaluación actualizada ✓');
+  } else {
+    const evalObj = { id: 'E-'+String(S.evals.length+1).padStart(3,'0'), fecha, grado, materia, tipo, contenido, estado_registro: 'activo' };
+    S.evals.push(evalObj);
+    syncEvalToSheets(evalObj, 'agregarEval');
+    toast('Evaluación agendada ✓ · Confirmación enviada por correo');
+  }
+  renderCalendar();
+  renderTasks();
+  closeModal('modal-overlay');
+}
+
+/* ══════════════════════════════════════
+   MODAL HELPERS
+══════════════════════════════════════ */
+function closeModal(overlayId) {
+  const el = document.getElementById(overlayId);
+  el.classList.remove('open');
+  el.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function closeModalOutside(e, overlayId) {
+  if (e.target===document.getElementById(overlayId)) closeModal(overlayId);
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(()=>{ t.style.opacity='0'; }, 3200);
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+checkSession();
+</script>
+</body>
+</html>
