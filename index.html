@@ -156,6 +156,10 @@
         <div>
           <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CORREO ELECTRÓNICO</label>
           <input type="email" id="req-correo" class="field" placeholder="tu@correo.com" />
+          <!-- ERROR 10: aviso de verificación de correo -->
+          <p style="font-size:.72rem; color:#DC2626; margin-top:.25rem; font-weight:500;">
+            ⚠️ Verifica bien tu correo. Si está mal escrito, no recibirás tus credenciales de acceso.
+          </p>
         </div>
         <div>
           <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">TELÉFONO / WHATSAPP</label>
@@ -521,12 +525,8 @@
 /* ══════════════════════════════════════
    CONSTANTES
 ══════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRV5rtVqnTCAVD0n5yNwH0EGZawTyRgYwDXEKFXmWDwa5uoOjRjdrzDQMGeM5O0oVzEw/exec'; // TODO: reemplazar con URL real del Web App de Google Apps Script
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8Ed46czjlM70-l8mHeJP5IXKvfT7vBfHeLvCoSwJ7Ggvv7zzm2xcjhbFE68OWkc9PUw/exec';
 const APP_VERSION = '1.0.0-MVP';
-
-// La solicitud llega a Google Sheets via Apps Script.
-// El script crea el ID, genera usuario y contraseña,
-// clona las pestañas del usuario y envía el correo con credenciales.
 
 /* ══════════════════════════════════════
    STATE
@@ -574,30 +574,107 @@ function helpGoToConfig() {
 /* ══════════════════════════════════════
    SESIÓN
 ══════════════════════════════════════ */
+// ERROR 9: verificar parámetro ?login=true antes de leer localStorage
 function checkSession() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('login') === 'true') {
+    showView('view-login');
+    return;
+  }
+
   const raw = localStorage.getItem('aurushen_session');
   if (!raw) { showView('view-welcome'); return; }
   try {
     const session = JSON.parse(raw);
+
+    // ERROR 12: verificar que la sesión tenga pestanaConfig y pestanaEval
+    if (!session.pestanaConfig || !session.pestanaEval) {
+      localStorage.removeItem('aurushen_session');
+      showView('view-login');
+      toast('Por favor inicia sesión de nuevo para actualizar tu sesión.');
+      return;
+    }
+
     S.user = session;
     document.getElementById('nav-teacher-name').textContent = 'Profa. ' + session.nombre;
+
+    // ERROR 2: intentar cargar config y evals desde localStorage
+    const cachedConfig = localStorage.getItem('aurushen_config_' + session.userId);
+    const cachedEvals  = localStorage.getItem('aurushen_evals_' + session.userId);
+    if (cachedConfig) {
+      try { S.config = JSON.parse(cachedConfig); } catch(e) {}
+    }
+    if (cachedEvals) {
+      try { S.evals = JSON.parse(cachedEvals); } catch(e) {}
+    }
+
     openDashboard();
+
+    // Refrescar datos en segundo plano sin bloquear
+    cargarDatosUsuario(session, true);
+
   } catch(e) {
     localStorage.removeItem('aurushen_session');
     showView('view-welcome');
   }
 }
 
-function loginSuccess(userData) {
+// ERROR 2: función cargarDatosUsuario
+async function cargarDatosUsuario(userData, silencioso) {
+  if (!silencioso) toast('Cargando tu información…');
+  try {
+    // Cargar config
+    const respConfig = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'cargarConfig', pestanaConfig: userData.pestanaConfig })
+    });
+    const dataConfig = await respConfig.json();
+    if (dataConfig.ok) {
+      S.config.grados   = dataConfig.grados;
+      S.config.materias = dataConfig.materias;
+      S.config.tipos    = dataConfig.tipos;
+      localStorage.setItem('aurushen_config_' + userData.userId, JSON.stringify(S.config));
+    }
+
+    // Cargar evaluaciones
+    const respEvals = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ accion: 'cargarEvaluaciones', pestanaEval: userData.pestanaEval })
+    });
+    const dataEvals = await respEvals.json();
+    if (dataEvals.ok) {
+      // Mapear campo 'estado' del Sheet al campo 'estado_registro' que usa el HTML
+      S.evals = (dataEvals.evaluaciones || []).map(ev => ({
+        ...ev,
+        estado_registro: 'activo'
+      }));
+      localStorage.setItem('aurushen_evals_' + userData.userId, JSON.stringify(S.evals));
+    }
+  } catch(e) {
+    console.warn('Error al cargar datos del usuario:', e.message);
+  }
+
+  if (!silencioso) {
+    openDashboard();
+  } else {
+    // Refrescar vistas si ya está en el dashboard
+    const activeView = document.querySelector('.view.active');
+    if (activeView && activeView.id === 'view-dashboard') {
+      populateSelects();
+      renderCalendar();
+      renderTasks();
+    }
+  }
+}
+
+// ERROR 2: loginSuccess llama a cargarDatosUsuario antes de openDashboard
+async function loginSuccess(userData) {
   localStorage.setItem('aurushen_session', JSON.stringify(userData));
   S.user = userData;
   document.getElementById('nav-teacher-name').textContent = 'Profa. ' + userData.nombre;
-  if (!S.config.grados.length) {
-    toast('¡Bienvenida! Lee las instrucciones para comenzar.');
-    showView('view-help');
-  } else {
-    openDashboard();
-  }
+  await cargarDatosUsuario(userData, false);
 }
 
 function doLogout() {
@@ -632,7 +709,8 @@ async function doLogin() {
     });
     const data = await resp.json();
     if (!data.ok) { toast('Correo o contraseña incorrectos.', true); return; }
-    loginSuccess(data.usuario);
+    // ERROR 1: se pasa data directamente (no data.usuario)
+    loginSuccess(data);
   } catch(e) {
     console.error('Error en login:', e);
     toast('Error de conexión: ' + e.message, true);
@@ -680,30 +758,29 @@ async function syncToSheets(payload) {
   }
 }
 
+// ERROR 3: agregar pestanaConfig al payload
 async function syncConfigToSheets() {
   if (!S.user) return;
-  await syncToSheets({ accion: 'guardarConfig', userId: S.user.userId, grados: S.config.grados, materias: S.config.materias, tipos: S.config.tipos });
-}
-
-async function syncEvalToSheets(evalObj, accion = 'agregarEval') {
-  if (!S.user) return;
-  await syncToSheets({ accion, userId: S.user.userId, eval: evalObj });
+  await syncToSheets({
+    accion: 'guardarConfig',
+    pestanaConfig: S.user.pestanaConfig,
+    userId: S.user.userId,
+    grados: S.config.grados,
+    materias: S.config.materias,
+    tipos: S.config.tipos
+  });
 }
 
 /* ══════════════════════════════════════
    CONFIGURACIÓN — Enter en campos
 ══════════════════════════════════════ */
-// Para grado: si está en el campo de nombre y presiona Enter, salta a alumnos
-// Si está en alumnos y presiona Enter, agrega
 function handleGradoEnter(event) {
   if (event.key === 'Enter') {
     const alumnosInput = document.getElementById('input-alumnos');
     const alumnosVal = alumnosInput.value.trim();
-    // Si ya hay alumnos ingresados, agregar directamente
     if (alumnosVal) {
       addItem('grado');
     } else {
-      // Sino, mover el foco al campo de alumnos
       alumnosInput.focus();
     }
   }
@@ -895,10 +972,26 @@ function populateSelects() {
     tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
 }
 
+// ERROR 11: mover calendario según filtro de fecha
 function applyFilters() {
   S.fGrado   = document.getElementById('filter-grado').value;
   S.fMateria = document.getElementById('filter-materia').value;
   S.fFecha   = document.getElementById('filter-fecha').value;
+
+  // Mover el calendario según el filtro
+  const hoy = new Date();
+  if (S.fFecha === 'mes_actual') {
+    S.calMonth = hoy.getMonth();
+    S.calYear  = hoy.getFullYear();
+  } else if (S.fFecha === 'proximos_7') {
+    S.calMonth = hoy.getMonth();
+    S.calYear  = hoy.getFullYear();
+  } else if (S.fFecha === 'proximo_mes') {
+    const proxMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    S.calMonth = proxMes.getMonth();
+    S.calYear  = proxMes.getFullYear();
+  }
+
   renderCalendar();
   renderTasks();
 }
@@ -1017,7 +1110,6 @@ function fmtDate(str) {
    HISTORIAL — con filtros
 ══════════════════════════════════════ */
 function openHistory() {
-  // Poblar selectores del historial con los grados y materias de la config
   const gradoSel   = document.getElementById('history-filter-grado');
   const materiaSel = document.getElementById('history-filter-materia');
 
@@ -1026,7 +1118,6 @@ function openHistory() {
   materiaSel.innerHTML = '<option value="">Todas las materias</option>' +
     S.config.materias.map(m => `<option value="${m}">${m}</option>`).join('');
 
-  // Resetear selects al abrir
   gradoSel.value   = '';
   materiaSel.value = '';
 
@@ -1123,13 +1214,19 @@ function deleteEval(id) {
   document.body.style.overflow = 'hidden';
 }
 
+// ERROR 6: agregar pestanaEval al payload de eliminar
 function confirmDeleteEval() {
   const id = _pendingDeleteEvalId;
   if (!id) return;
   const ev = S.evals.find(e => e.id === id);
   if (ev) {
     ev.estado_registro = 'borrado';
-    syncToSheets({ accion: 'eliminarEval', userId: S.user?.userId, evalId: id });
+    syncToSheets({
+      accion: 'eliminarEval',
+      userId: S.user?.userId,
+      pestanaEval: S.user?.pestanaEval,
+      evalId: id
+    });
   }
   _pendingDeleteEvalId = null;
   closeModal('delete-eval-modal-overlay');
@@ -1168,7 +1265,8 @@ function openModal(editId, preselectedDate) {
   document.body.style.overflow = 'hidden';
 }
 
-function scheduleEval() {
+// ERRORES 4 y 5: estructura correcta para agregar y editar evaluaciones
+async function scheduleEval() {
   const grado     = document.getElementById('modal-grado').value;
   const materia   = document.getElementById('modal-materia').value;
   const tipo      = document.getElementById('modal-tipo').value;
@@ -1177,16 +1275,44 @@ function scheduleEval() {
   const editId    = document.getElementById('modal-edit-id').value;
   if (!grado||!materia||!tipo||!fecha||!contenido) return toast('Completa todos los campos');
   if (editId) {
+    // ERROR 5: estructura correcta para editarEval
     const idx = S.evals.findIndex(e => e.id===editId);
     if (idx>=0) {
       S.evals[idx] = { ...S.evals[idx], grado, materia, tipo, fecha, contenido };
-      syncEvalToSheets(S.evals[idx], 'editarEval');
+      await syncToSheets({
+        accion: 'editarEval',
+        pestanaEval: S.user?.pestanaEval,
+        evalId: editId,
+        cambios: {
+          grado,
+          materia,
+          tipo,
+          fecha,
+          contenido,
+          estado: S.evals[idx].estado || 'Pendiente'
+        }
+      });
     }
     toast('Evaluación actualizada ✓');
   } else {
-    const evalObj = { id: 'E-'+String(S.evals.length+1).padStart(3,'0'), fecha, grado, materia, tipo, contenido, estado_registro: 'activo' };
+    // ERROR 4: agregar campo estado y pestanaEval al payload
+    const evalObj = {
+      id: 'E-'+String(S.evals.length+1).padStart(3,'0'),
+      fecha,
+      grado,
+      materia,
+      tipo,
+      contenido,
+      estado: 'Pendiente',
+      estado_registro: 'activo'
+    };
     S.evals.push(evalObj);
-    syncEvalToSheets(evalObj, 'agregarEval');
+    await syncToSheets({
+      accion: 'agregarEval',
+      userId: S.user?.userId,
+      pestanaEval: S.user?.pestanaEval,
+      eval: evalObj
+    });
     toast('Evaluación agendada ✓ · Confirmación enviada por correo');
   }
   renderCalendar();
