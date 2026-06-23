@@ -27,6 +27,7 @@
     .btn-gold { background:var(--gold); color:#fff; font-weight:600; border:none; border-radius:10px; padding:.75rem 1.5rem; cursor:pointer; transition:background .2s,transform .1s; width:100%; font-size:.9rem; letter-spacing:.02em; font-family:'Inter',sans-serif; }
     .btn-gold:hover { background:var(--gold-light); }
     .btn-gold:active { transform:scale(.98); }
+    .btn-gold:disabled { background:#D8CBA8; cursor:not-allowed; opacity:.8; }
     .btn-blue { background:var(--deep-blue); color:#fff; font-weight:600; border:none; border-radius:8px; padding:.5rem .9rem; cursor:pointer; transition:opacity .2s; font-size:.8rem; white-space:nowrap; font-family:'Inter',sans-serif; }
     .btn-blue:hover { opacity:.85; }
     .btn-ghost { background:none; border:1.5px solid var(--border); color:var(--muted); font-weight:500; border-radius:8px; padding:.4rem .8rem; cursor:pointer; font-size:.78rem; font-family:'Inter',sans-serif; transition:all .15s; }
@@ -104,10 +105,6 @@
     .auth-header { background:var(--deep-blue); padding:1.5rem 1.25rem 1.25rem; display:flex; align-items:center; gap:.75rem; }
     .auth-header-sub { font-size:.72rem; font-weight:600; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin:0; }
     .auth-header-title { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:700; color:#fff; margin:0; line-height:1.2; }
-    /* Historial filtros */
-    .history-filter-bar { display:flex; gap:.5rem; margin-bottom:1rem; }
-    .history-filter-bar select { flex:1; padding:.45rem .6rem; border:1.5px solid var(--border); border-radius:8px; background:#fff; color:var(--dark); font-size:.78rem; font-family:'Inter',sans-serif; outline:none; }
-    .history-filter-bar select:focus { border-color:var(--gold); }
     @media (min-width:480px) {
       #modal-box, #edit-modal-box, .modal-box { border-radius:20px; margin:auto; }
       #modal-overlay, #edit-modal-overlay, .modal-overlay { align-items:center; }
@@ -156,7 +153,6 @@
         <div>
           <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CORREO ELECTRÓNICO</label>
           <input type="email" id="req-correo" class="field" placeholder="tu@correo.com" />
-          <!-- ERROR 10: aviso de verificación de correo -->
           <p style="font-size:.72rem; color:#DC2626; margin-top:.25rem; font-weight:500;">
             ⚠️ Verifica bien tu correo. Si está mal escrito, no recibirás tus credenciales de acceso.
           </p>
@@ -165,7 +161,7 @@
           <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">TELÉFONO / WHATSAPP</label>
           <input type="tel" id="req-telefono" class="field" placeholder="Ej. +57 300 000 0000" onkeydown="if(event.key==='Enter') submitRequest()" />
         </div>
-        <div class="pt-1"><button class="btn-gold" onclick="submitRequest()">Enviar solicitud →</button></div>
+        <div class="pt-1"><button class="btn-gold" id="btn-submit-request" onclick="submitRequest()">Enviar solicitud →</button></div>
       </div>
       <button onclick="showView('view-welcome')" class="mt-5 text-sm text-center w-full" style="background:none;border:none;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;">← Volver</button>
     </div>
@@ -199,7 +195,7 @@
           <label class="text-xs font-semibold mb-1 block" style="color:var(--muted);">CONTRASEÑA</label>
           <input type="password" id="login-pass" class="field" placeholder="••••••••" onkeydown="if(event.key==='Enter') doLogin()" />
         </div>
-        <div class="pt-1"><button class="btn-gold" onclick="doLogin()">Entrar →</button></div>
+        <div class="pt-1"><button class="btn-gold" id="btn-login" onclick="doLogin()">Entrar →</button></div>
       </div>
       <p class="text-center text-xs mt-5" style="color:var(--muted);">¿Aún no tienes cuenta? <button onclick="showView('view-request')" style="background:none;border:none;cursor:pointer;color:var(--gold);font-weight:600;text-decoration:underline;font-size:.75rem;font-family:'Inter',sans-serif;">Solicitar acceso</button></p>
       <button onclick="showView('view-welcome')" class="mt-3 text-sm text-center w-full" style="background:none;border:none;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;">← Volver</button>
@@ -299,7 +295,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="openHistory()" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Historial de evaluaciones">📋</button>
         <button onclick="showView('view-help')" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Instrucciones">📖</button>
         <button onclick="showView('view-onboarding')" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Configuración">⚙️</button>
         <button onclick="confirmLogout()" class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(255,255,255,.12);" title="Cerrar sesión">🚪</button>
@@ -391,11 +386,11 @@
         <div class="help-step"><div class="num">1</div><div class="txt"><strong>Grado</strong>, <strong>Materia</strong> y <strong>Tipo de Evaluación</strong> (elige de las listas que configuraste).</div></div>
         <div class="help-step"><div class="num">2</div><div class="txt"><strong>Fecha</strong> en que se realizará.</div></div>
         <div class="help-step"><div class="num">3</div><div class="txt"><strong>Contenido o descripción</strong>: qué se va a evaluar.</div></div>
-        <p>Finaliza presionando <strong>"Guardar Evaluación"</strong>. Aparecerá en el calendario y en la lista de evaluaciones.</p>
+        <p>Finaliza presionando <strong>"Guardar Evaluación"</strong>. Aparecerá de inmediato en el calendario y en la lista de evaluaciones.</p>
       </div>
       <div class="help-card">
         <h3>✏️ Editar o eliminar</h3>
-        <p>En cada tarjeta de evaluación, o tocando su recuadro de color en el calendario, puedes presionar <strong>"Editar"</strong> para modificar los datos, o <strong>"Eliminar"</strong> para quitarla.</p>
+        <p>En cada tarjeta de evaluación, o tocando su recuadro de color en el calendario, puedes presionar <strong>"Editar"</strong> para modificar los datos, o <strong>"Eliminar"</strong> para quitarla definitivamente.</p>
         <p>Lo mismo aplica para los grados, materias y tipos en la pantalla de Configuración.</p>
       </div>
       <div class="help-card">
@@ -437,7 +432,7 @@
         <textarea id="modal-contenido" class="field" rows="3" placeholder="Describe el contenido a evaluar…"></textarea>
       </div>
       <input type="hidden" id="modal-edit-id" value="" />
-      <button class="btn-gold mt-1" onclick="scheduleEval()">Guardar Evaluación ✓</button>
+      <button class="btn-gold mt-1" id="btn-save-eval" onclick="scheduleEval()">Guardar Evaluación ✓</button>
     </div>
   </div>
 </div>
@@ -494,30 +489,6 @@
   </div>
 </div>
 
-<!-- MODAL: HISTORIAL DE EVALUACIONES -->
-<div id="history-modal-overlay" class="modal-overlay" onclick="closeModalOutside(event,'history-modal-overlay')">
-  <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:2rem;">
-    <div class="modal-handle"></div>
-    <div class="flex items-center justify-between mb-3">
-      <h2 style="font-family:'Fraunces',serif;color:var(--deep-blue);font-size:1.2rem;font-weight:700;margin:0;">📋 Historial</h2>
-      <button onclick="closeModal('history-modal-overlay')" class="w-8 h-8 rounded-full flex items-center justify-center text-xl" style="background:#F0EBD8;color:var(--muted);border:none;cursor:pointer;">×</button>
-    </div>
-    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem;">Todas las evaluaciones · Filtra por grado o materia</p>
-
-    <!-- Filtros del historial -->
-    <div class="history-filter-bar">
-      <select id="history-filter-grado" onchange="renderHistory()">
-        <option value="">Todos los grados</option>
-      </select>
-      <select id="history-filter-materia" onchange="renderHistory()">
-        <option value="">Todas las materias</option>
-      </select>
-    </div>
-
-    <div id="history-list"></div>
-  </div>
-</div>
-
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -525,7 +496,7 @@
 /* ══════════════════════════════════════
    CONSTANTES
 ══════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6knbSjso2pPcYMXmcJLur4pmbHzwfQCogeIgA-MbPc35YkTd2Fj9xBtnrGVMa07AhMw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhN9IZ0fn0UIw6v4QizMJkiRY4fLNMBLuALzp1aTaEtHxFjs6AdPwQcYbjC6vwwM7f0g/exec';
 const APP_VERSION = '1.0.0-MVP';
 
 /* ══════════════════════════════════════
@@ -574,43 +545,27 @@ function helpGoToConfig() {
 /* ══════════════════════════════════════
    SESIÓN
 ══════════════════════════════════════ */
-// ERROR 9: verificar parámetro ?login=true antes de leer localStorage
 function checkSession() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('login') === 'true') {
-    showView('view-login');
-    return;
-  }
-
   const raw = localStorage.getItem('aurushen_session');
   if (!raw) { showView('view-welcome'); return; }
   try {
     const session = JSON.parse(raw);
-
-    // ERROR 12: verificar que la sesión tenga pestanaConfig y pestanaEval
     if (!session.pestanaConfig || !session.pestanaEval) {
       localStorage.removeItem('aurushen_session');
       showView('view-login');
-      toast('Por favor inicia sesión de nuevo para actualizar tu sesión.');
+      toast('Por favor inicia sesión de nuevo.');
       return;
     }
 
     S.user = session;
     document.getElementById('nav-teacher-name').textContent = 'Profa. ' + session.nombre;
 
-    // ERROR 2: intentar cargar config y evals desde localStorage
     const cachedConfig = localStorage.getItem('aurushen_config_' + session.userId);
     const cachedEvals  = localStorage.getItem('aurushen_evals_' + session.userId);
-    if (cachedConfig) {
-      try { S.config = JSON.parse(cachedConfig); } catch(e) {}
-    }
-    if (cachedEvals) {
-      try { S.evals = JSON.parse(cachedEvals); } catch(e) {}
-    }
+    if (cachedConfig) { try { S.config = JSON.parse(cachedConfig); } catch(e) {} }
+    if (cachedEvals)  { try { S.evals  = JSON.parse(cachedEvals);  } catch(e) {} }
 
     openDashboard();
-
-    // Refrescar datos en segundo plano sin bloquear
     cargarDatosUsuario(session, true);
 
   } catch(e) {
@@ -619,11 +574,9 @@ function checkSession() {
   }
 }
 
-// ERROR 2: función cargarDatosUsuario
 async function cargarDatosUsuario(userData, silencioso) {
   if (!silencioso) toast('Cargando tu información…');
   try {
-    // Cargar config
     const respConfig = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -637,7 +590,6 @@ async function cargarDatosUsuario(userData, silencioso) {
       localStorage.setItem('aurushen_config_' + userData.userId, JSON.stringify(S.config));
     }
 
-    // Cargar evaluaciones
     const respEvals = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -645,7 +597,6 @@ async function cargarDatosUsuario(userData, silencioso) {
     });
     const dataEvals = await respEvals.json();
     if (dataEvals.ok) {
-      // CAMBIO 2: tomar directamente lo que manda el Sheet (ya incluye estado_registro real)
       S.evals = dataEvals.evaluaciones || [];
       localStorage.setItem('aurushen_evals_' + userData.userId, JSON.stringify(S.evals));
     }
@@ -656,7 +607,6 @@ async function cargarDatosUsuario(userData, silencioso) {
   if (!silencioso) {
     openDashboard();
   } else {
-    // Refrescar vistas si ya está en el dashboard
     const activeView = document.querySelector('.view.active');
     if (activeView && activeView.id === 'view-dashboard') {
       populateSelects();
@@ -666,7 +616,6 @@ async function cargarDatosUsuario(userData, silencioso) {
   }
 }
 
-// ERROR 2: loginSuccess llama a cargarDatosUsuario antes de openDashboard
 async function loginSuccess(userData) {
   localStorage.setItem('aurushen_session', JSON.stringify(userData));
   S.user = userData;
@@ -688,16 +637,28 @@ function confirmLogout() {
 
 /* ══════════════════════════════════════
    AUTH — LOGIN
+   (con bloqueo de botón para evitar clics múltiples)
 ══════════════════════════════════════ */
 async function doLogin() {
+  const btn = document.getElementById('btn-login');
+  if (btn.disabled) return; // ya hay una petición en curso, ignorar clics repetidos
+
   const correo     = document.getElementById('login-email').value.trim();
   const contrasena = document.getElementById('login-pass').value.trim();
-  if (!correo || !contrasena) { toast('Por favor completa todos los campos.', true); return; }
+  if (!correo || !contrasena) { toast('Por favor completa todos los campos.'); return; }
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Entrando…';
+
   if (!APPS_SCRIPT_URL) {
     const userData = { userId: 'DOC-001', nombre: 'Profesora', apellido: 'Demo', correo };
-    loginSuccess(userData);
+    await loginSuccess(userData);
+    btn.disabled = false;
+    btn.textContent = originalText;
     return;
   }
+
   try {
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -705,24 +666,38 @@ async function doLogin() {
       body: JSON.stringify({ accion: 'login', correo, contrasena })
     });
     const data = await resp.json();
-    if (!data.ok) { toast('Correo o contraseña incorrectos.', true); return; }
-    // ERROR 1: se pasa data directamente (no data.usuario)
-    loginSuccess(data);
+    if (!data.ok) {
+      toast('Correo o contraseña incorrectos.');
+      return;
+    }
+    await loginSuccess(data);
   } catch(e) {
     console.error('Error en login:', e);
-    toast('Error de conexión: ' + e.message, true);
+    toast('Error de conexión: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 }
 
 /* ══════════════════════════════════════
    AUTH — SOLICITUD DE ACCESO
+   (con bloqueo de botón para evitar clics múltiples)
 ══════════════════════════════════════ */
 async function submitRequest() {
+  const btn = document.getElementById('btn-submit-request');
+  if (btn.disabled) return;
+
   const nombre   = document.getElementById('req-nombre').value.trim();
   const apellido = document.getElementById('req-apellido').value.trim();
   const correo   = document.getElementById('req-correo').value.trim();
   const telefono = document.getElementById('req-telefono').value.trim();
-  if (!nombre || !apellido || !correo || !telefono) { toast('Por favor completa todos los campos.', true); return; }
+  if (!nombre || !apellido || !correo || !telefono) { toast('Por favor completa todos los campos.'); return; }
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'Enviando…';
+
   try {
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -730,17 +705,22 @@ async function submitRequest() {
       body: JSON.stringify({ accion: 'solicitud', nombre, apellido, correo, telefono })
     });
     const data = await resp.json();
-    if (!data.ok) { toast(data.error || 'No se pudo enviar la solicitud.', true); return; }
+    if (!data.ok) {
+      toast(data.error || 'No se pudo enviar la solicitud.');
+      return;
+    }
+    showView('view-confirm');
   } catch(e) {
     console.error('Error al enviar solicitud:', e);
-    toast('Error de conexión: ' + e.message, true);
-    return;
+    toast('Error de conexión: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
-  showView('view-confirm');
 }
 
 /* ══════════════════════════════════════
-   SINCRONIZACIÓN (esqueleto — falla silenciosa)
+   SINCRONIZACIÓN (falla silenciosa, no bloquea la UI)
 ══════════════════════════════════════ */
 async function syncToSheets(payload) {
   if (!APPS_SCRIPT_URL) return;
@@ -751,11 +731,10 @@ async function syncToSheets(payload) {
       body: JSON.stringify(payload)
     });
   } catch(e) {
-    console.warn('Sync con Sheets falló (esperado en desarrollo):', e.message);
+    console.warn('Sync con Sheets falló:', e.message);
   }
 }
 
-// ERROR 3: agregar pestanaConfig al payload
 async function syncConfigToSheets() {
   if (!S.user) return;
   await syncToSheets({
@@ -775,11 +754,8 @@ function handleGradoEnter(event) {
   if (event.key === 'Enter') {
     const alumnosInput = document.getElementById('input-alumnos');
     const alumnosVal = alumnosInput.value.trim();
-    if (alumnosVal) {
-      addItem('grado');
-    } else {
-      alumnosInput.focus();
-    }
+    if (alumnosVal) addItem('grado');
+    else alumnosInput.focus();
   }
 }
 
@@ -969,26 +945,10 @@ function populateSelects() {
     tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
 }
 
-// ERROR 11: mover calendario según filtro de fecha
 function applyFilters() {
   S.fGrado   = document.getElementById('filter-grado').value;
   S.fMateria = document.getElementById('filter-materia').value;
   S.fFecha   = document.getElementById('filter-fecha').value;
-
-  // Mover el calendario según el filtro
-  const hoy = new Date();
-  if (S.fFecha === 'mes_actual') {
-    S.calMonth = hoy.getMonth();
-    S.calYear  = hoy.getFullYear();
-  } else if (S.fFecha === 'proximos_7') {
-    S.calMonth = hoy.getMonth();
-    S.calYear  = hoy.getFullYear();
-  } else if (S.fFecha === 'proximo_mes') {
-    const proxMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
-    S.calMonth = proxMes.getMonth();
-    S.calYear  = proxMes.getFullYear();
-  }
-
   renderCalendar();
   renderTasks();
 }
@@ -997,7 +957,6 @@ function getFiltered() {
   const today = new Date();
   today.setHours(0,0,0,0);
   return S.evals.filter(e => {
-    if (e.estado_registro === 'borrado') return false;
     if (S.fGrado   && e.grado   !== S.fGrado)   return false;
     if (S.fMateria && e.materia !== S.fMateria)  return false;
     if (S.fFecha) {
@@ -1103,71 +1062,6 @@ function fmtDate(str) {
   return `${parseInt(d)} ${MO[parseInt(m)-1]} ${y}`;
 }
 
-/* ══════════════════════════════════════
-   HISTORIAL — con filtros
-   CAMBIO 3: muestra todas (activas + borradas), con etiqueta roja para eliminadas
-══════════════════════════════════════ */
-function openHistory() {
-  const gradoSel   = document.getElementById('history-filter-grado');
-  const materiaSel = document.getElementById('history-filter-materia');
-
-  gradoSel.innerHTML   = '<option value="">Todos los grados</option>' +
-    S.config.grados.map(g => `<option value="${g.label}">${g.label}</option>`).join('');
-  materiaSel.innerHTML = '<option value="">Todas las materias</option>' +
-    S.config.materias.map(m => `<option value="${m}">${m}</option>`).join('');
-
-  gradoSel.value   = '';
-  materiaSel.value = '';
-
-  renderHistory();
-  document.getElementById('history-modal-overlay').classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
-
-function renderHistory() {
-  const fGrado   = document.getElementById('history-filter-grado').value;
-  const fMateria = document.getElementById('history-filter-materia').value;
-
-  // CAMBIO 3: ya no se excluyen las borradas; solo se filtran por grado/materia
-  const all = S.evals
-    .filter(e => {
-      if (fGrado   && e.grado   !== fGrado)   return false;
-      if (fMateria && e.materia !== fMateria)  return false;
-      return true;
-    })
-    .sort((a,b) => b.fecha.localeCompare(a.fecha));
-
-  const list = document.getElementById('history-list');
-
-  if (!all.length) {
-    list.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.88rem;padding:2rem 0;">No hay evaluaciones que coincidan con los filtros.</p>';
-    return;
-  }
-
-  // CAMBIO 3: renderizado diferenciado para borradas vs activas
-  list.innerHTML = all.map(ev => {
-    const isDeleted = ev.estado_registro === 'borrado';
-    const estado = getEstadoAuto(ev.fecha);
-    const tc     = TYPE_COLORS[ev.tipo] || TYPE_COLORS.default;
-    const isDone = estado === 'Completada';
-    const borderColor = isDeleted ? '#DC2626' : (isDone ? '#059669' : 'var(--gold)');
-    const badgeHtml = isDeleted
-      ? '<span class="badge" style="background:#FEE2E2;color:#991B1B;">🗑️ Eliminada</span>'
-      : `<span class="badge ${isDone ? 'badge-done' : 'badge-pending'}">${estado}</span>`;
-    return `<div style="background:#fff;border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;border-left:4px solid ${borderColor};box-shadow:0 1px 5px rgba(0,0,0,.05);${isDeleted ? 'opacity:.6;' : ''}">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.35rem;">
-        <div>
-          <p style="font-weight:600;font-size:.85rem;color:var(--deep-blue);margin:0;">${ev.grado} · ${ev.materia}</p>
-          <p style="font-size:.75rem;color:var(--muted);margin:.15rem 0 0;">${fmtDate(ev.fecha)}</p>
-        </div>
-        ${badgeHtml}
-      </div>
-      <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:999px;background:${tc};color:var(--dark);">${ev.tipo}</span>
-      <p style="font-size:.82rem;color:var(--dark);margin:.45rem 0 0;line-height:1.5;">${ev.contenido}</p>
-    </div>`;
-  }).join('');
-}
-
 function renderTasks() {
   const list  = document.getElementById('task-list');
   const empty = document.getElementById('empty-state');
@@ -1213,18 +1107,20 @@ function deleteEval(id) {
   if (!ev) return;
   _pendingDeleteEvalId = id;
   const desc = `${ev.grado} · ${ev.materia} · ${ev.tipo}<br><span style="font-size:.78rem;">${fmtDate(ev.fecha)}</span>`;
-  document.getElementById('delete-eval-desc').innerHTML = 'Esta acción eliminará la evaluación:<br><strong>' + desc + '</strong>';
+  document.getElementById('delete-eval-desc').innerHTML = 'Esta acción eliminará definitivamente la evaluación:<br><strong>' + desc + '</strong>';
   document.getElementById('delete-eval-modal-overlay').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
-// ERROR 6: agregar pestanaEval al payload de eliminar
+// Eliminación REAL e inmediata: se quita del arreglo local (tabla + calendario)
+// y se sincroniza con la base de datos en segundo plano, sin bloquear la UI.
 function confirmDeleteEval() {
   const id = _pendingDeleteEvalId;
   if (!id) return;
-  const ev = S.evals.find(e => e.id === id);
-  if (ev) {
-    ev.estado_registro = 'borrado';
+  const idx = S.evals.findIndex(e => e.id === id);
+  if (idx >= 0) {
+    S.evals.splice(idx, 1);
+    if (S.user) localStorage.setItem('aurushen_evals_' + S.user.userId, JSON.stringify(S.evals));
     syncToSheets({
       accion: 'eliminarEval',
       userId: S.user?.userId,
@@ -1269,59 +1165,62 @@ function openModal(editId, preselectedDate) {
   document.body.style.overflow = 'hidden';
 }
 
-// ERRORES 4 y 5: estructura correcta para agregar y editar evaluaciones
-async function scheduleEval() {
+// CLAVE: la ventana se cierra y la tabla/calendario se actualizan
+// INMEDIATAMENTE con los datos locales. El envío a Sheets ocurre
+// después, en segundo plano, sin bloquear ni retrasar la interfaz.
+function scheduleEval() {
+  const btn = document.getElementById('btn-save-eval');
+  if (btn.disabled) return;
+
   const grado     = document.getElementById('modal-grado').value;
   const materia   = document.getElementById('modal-materia').value;
   const tipo      = document.getElementById('modal-tipo').value;
   const fecha     = document.getElementById('modal-fecha').value;
   const contenido = document.getElementById('modal-contenido').value.trim();
   const editId    = document.getElementById('modal-edit-id').value;
-  if (!grado||!materia||!tipo||!fecha||!contenido) return toast('Completa todos los campos');
+  if (!grado||!materia||!tipo||!fecha||!contenido) { toast('Completa todos los campos'); return; }
+
+  btn.disabled = true;
+
   if (editId) {
-    // ERROR 5: estructura correcta para editarEval
     const idx = S.evals.findIndex(e => e.id===editId);
     if (idx>=0) {
       S.evals[idx] = { ...S.evals[idx], grado, materia, tipo, fecha, contenido };
-      await syncToSheets({
+      syncToSheets({
         accion: 'editarEval',
         pestanaEval: S.user?.pestanaEval,
         evalId: editId,
         cambios: {
-          grado,
-          materia,
-          tipo,
-          fecha,
-          contenido,
+          grado, materia, tipo, fecha, contenido,
           estado: S.evals[idx].estado || 'Pendiente'
         }
       });
     }
     toast('Evaluación actualizada ✓');
   } else {
-    // ERROR 4: agregar campo estado y pestanaEval al payload
     const evalObj = {
-      id: 'E-'+String(S.evals.length+1).padStart(3,'0'),
-      fecha,
-      grado,
-      materia,
-      tipo,
-      contenido,
-      estado: 'Pendiente',
-      estado_registro: 'activo'
+      id: 'E-' + Date.now(),
+      fecha, grado, materia, tipo, contenido,
+      estado: 'Pendiente'
     };
     S.evals.push(evalObj);
-    await syncToSheets({
+    syncToSheets({
       accion: 'agregarEval',
       userId: S.user?.userId,
       pestanaEval: S.user?.pestanaEval,
       eval: evalObj
     });
-    toast('Evaluación agendada ✓ · Confirmación enviada por correo');
+    toast('Evaluación agendada ✓');
   }
+
+  if (S.user) localStorage.setItem('aurushen_evals_' + S.user.userId, JSON.stringify(S.evals));
+
+  // Cerrar modal y refrescar vistas de inmediato, sin esperar la red
+  closeModal('modal-overlay');
   renderCalendar();
   renderTasks();
-  closeModal('modal-overlay');
+
+  btn.disabled = false;
 }
 
 /* ══════════════════════════════════════
