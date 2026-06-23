@@ -502,7 +502,7 @@
       <h2 style="font-family:'Fraunces',serif;color:var(--deep-blue);font-size:1.2rem;font-weight:700;margin:0;">📋 Historial</h2>
       <button onclick="closeModal('history-modal-overlay')" class="w-8 h-8 rounded-full flex items-center justify-center text-xl" style="background:#F0EBD8;color:var(--muted);border:none;cursor:pointer;">×</button>
     </div>
-    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem;">Solo evaluaciones activas · Filtra por grado o materia</p>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem;">Todas las evaluaciones · Filtra por grado o materia</p>
 
     <!-- Filtros del historial -->
     <div class="history-filter-bar">
@@ -525,7 +525,7 @@
 /* ══════════════════════════════════════
    CONSTANTES
 ══════════════════════════════════════ */
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby8Ed46czjlM70-l8mHeJP5IXKvfT7vBfHeLvCoSwJ7Ggvv7zzm2xcjhbFE68OWkc9PUw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxUo222zUl1DncLErjCB4MQRMcbftdC6sB_WNdlAHLFtVE90Y91vAUEWcl2dB4jHlquzA/exec';
 const APP_VERSION = '1.0.0-MVP';
 
 /* ══════════════════════════════════════
@@ -645,11 +645,8 @@ async function cargarDatosUsuario(userData, silencioso) {
     });
     const dataEvals = await respEvals.json();
     if (dataEvals.ok) {
-      // Mapear campo 'estado' del Sheet al campo 'estado_registro' que usa el HTML
-      S.evals = (dataEvals.evaluaciones || []).map(ev => ({
-        ...ev,
-        estado_registro: 'activo'
-      }));
+      // CAMBIO 2: tomar directamente lo que manda el Sheet (ya incluye estado_registro real)
+      S.evals = dataEvals.evaluaciones || [];
       localStorage.setItem('aurushen_evals_' + userData.userId, JSON.stringify(S.evals));
     }
   } catch(e) {
@@ -1108,6 +1105,7 @@ function fmtDate(str) {
 
 /* ══════════════════════════════════════
    HISTORIAL — con filtros
+   CAMBIO 3: muestra todas (activas + borradas), con etiqueta roja para eliminadas
 ══════════════════════════════════════ */
 function openHistory() {
   const gradoSel   = document.getElementById('history-filter-grado');
@@ -1130,9 +1128,9 @@ function renderHistory() {
   const fGrado   = document.getElementById('history-filter-grado').value;
   const fMateria = document.getElementById('history-filter-materia').value;
 
+  // CAMBIO 3: ya no se excluyen las borradas; solo se filtran por grado/materia
   const all = S.evals
     .filter(e => {
-      if (e.estado_registro === 'borrado') return false;
       if (fGrado   && e.grado   !== fGrado)   return false;
       if (fMateria && e.materia !== fMateria)  return false;
       return true;
@@ -1146,17 +1144,23 @@ function renderHistory() {
     return;
   }
 
+  // CAMBIO 3: renderizado diferenciado para borradas vs activas
   list.innerHTML = all.map(ev => {
+    const isDeleted = ev.estado_registro === 'borrado';
     const estado = getEstadoAuto(ev.fecha);
     const tc     = TYPE_COLORS[ev.tipo] || TYPE_COLORS.default;
     const isDone = estado === 'Completada';
-    return `<div style="background:#fff;border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;border-left:4px solid ${isDone ? '#059669' : 'var(--gold)'};box-shadow:0 1px 5px rgba(0,0,0,.05);">
+    const borderColor = isDeleted ? '#DC2626' : (isDone ? '#059669' : 'var(--gold)');
+    const badgeHtml = isDeleted
+      ? '<span class="badge" style="background:#FEE2E2;color:#991B1B;">🗑️ Eliminada</span>'
+      : `<span class="badge ${isDone ? 'badge-done' : 'badge-pending'}">${estado}</span>`;
+    return `<div style="background:#fff;border-radius:12px;padding:.85rem 1rem;margin-bottom:.65rem;border-left:4px solid ${borderColor};box-shadow:0 1px 5px rgba(0,0,0,.05);${isDeleted ? 'opacity:.6;' : ''}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.35rem;">
         <div>
           <p style="font-weight:600;font-size:.85rem;color:var(--deep-blue);margin:0;">${ev.grado} · ${ev.materia}</p>
           <p style="font-size:.75rem;color:var(--muted);margin:.15rem 0 0;">${fmtDate(ev.fecha)}</p>
         </div>
-        <span class="badge ${isDone ? 'badge-done' : 'badge-pending'}">${estado}</span>
+        ${badgeHtml}
       </div>
       <span style="font-size:.72rem;font-weight:600;padding:.15rem .45rem;border-radius:999px;background:${tc};color:var(--dark);">${ev.tipo}</span>
       <p style="font-size:.82rem;color:var(--dark);margin:.45rem 0 0;line-height:1.5;">${ev.contenido}</p>
