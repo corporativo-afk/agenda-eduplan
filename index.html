@@ -290,8 +290,8 @@
       <div class="flex items-center gap-2.5">
         <div class="logo-mark" style="width:30px;height:30px;font-size:.8rem;">A</div>
         <div>
-          <p class="text-xs font-medium uppercase tracking-widest" style="opacity:.5;">Bienvenida</p>
-          <h2 class="font-display text-base font-semibold leading-tight" id="nav-teacher-name">Profesora</h2>
+          <p class="text-xs font-medium uppercase tracking-widest" style="opacity:.5;">Bienvenid@</p>
+          <h2 class="font-display text-base font-semibold leading-tight" id="nav-teacher-name">Profe</h2>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -364,7 +364,7 @@
     <div class="px-4 pt-5 max-w-lg mx-auto flex flex-col">
       <div class="help-card">
         <h3>🔐 Solicitar acceso e iniciar sesión</h3>
-        <p>Al abrir la aplicación verás la pantalla de bienvenida. Si es tu primera vez, toca <em>Solicitar Acceso</em> y completa el formulario con tu nombre, apellido, correo y teléfono.</p>
+        <p>Al abrir la aplicación verás la pantalla de bienvenid@. Si es tu primera vez, toca <em>Solicitar Acceso</em> y completa el formulario con tu nombre, apellido, correo y teléfono.</p>
         <p>En las próximas horas recibirás un correo con tu usuario y contraseña. La próxima vez usa <strong>Iniciar Sesión</strong> con esas credenciales.</p>
       </div>
       <div class="help-card">
@@ -558,7 +558,7 @@ function checkSession() {
     }
 
     S.user = session;
-    document.getElementById('nav-teacher-name').textContent = 'Profa. ' + session.nombre;
+    document.getElementById('nav-teacher-name').textContent = 'Profe. ' + session.nombre;
 
     const cachedConfig = localStorage.getItem('aurushen_config_' + session.userId);
     const cachedEvals  = localStorage.getItem('aurushen_evals_' + session.userId);
@@ -619,7 +619,7 @@ async function cargarDatosUsuario(userData, silencioso) {
 async function loginSuccess(userData) {
   localStorage.setItem('aurushen_session', JSON.stringify(userData));
   S.user = userData;
-  document.getElementById('nav-teacher-name').textContent = 'Profa. ' + userData.nombre;
+  document.getElementById('nav-teacher-name').textContent = 'Profe. ' + userData.nombre;
   await cargarDatosUsuario(userData, false);
 }
 
@@ -652,7 +652,7 @@ async function doLogin() {
   btn.textContent = 'Entrando…';
 
   if (!APPS_SCRIPT_URL) {
-    const userData = { userId: 'DOC-001', nombre: 'Profesora', apellido: 'Demo', correo };
+    const userData = { userId: 'DOC-001', nombre: 'Profe', apellido: 'Demo', correo };
     await loginSuccess(userData);
     btn.disabled = false;
     btn.textContent = originalText;
